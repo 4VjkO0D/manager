@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Life Manager</title>
+
+<!-- PWA setup: lets Android/iOS install this as a standalone app with no browser bar -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1117">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Life Manager">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --surface2:  #22263a;
+    --border:    #2e3347;
+    --accent:    #6c63ff;
+    --accent2:   #a78bfa;
+    --text:      #e8eaf0;
+    --text-muted:#8b90a8;
+    --red:       #f87171;
+    --amber:     #fbbf24;
+    --green:     #34d399;
+    --nav-h:     64px;
+    --header-h:  56px;
+    --radius:    12px;
+    --radius-sm: 8px;
+    --transition: 0.18s ease;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #app {
+    max-width: 430px;
+    margin: 0 auto;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  #header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  #tab-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  #edit-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition), transform var(--transition);
+  }
+  #edit-btn:hover { background: var(--border); color: var(--text); }
+  #edit-btn.active { background: var(--accent); color: #fff; transform: scale(1.05); }
+
+  /* ── Content ── */
+  #content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 16px calc(var(--nav-h) + 16px);
+    scroll-behavior: smooth;
+  }
+
+  /* AI tab overrides content padding */
+  #content:has(#tab-ai.active) {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0 !important;
+  }
+
+  #tab-ai.active {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* ── Tabs ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Bottom Nav ── */
+  #bottom-nav {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    height: var(--nav-h);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+    border: none; background: none;
+    color: var(--text-muted);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    transition: color var(--transition);
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-btn i { font-size: 18px; transition: transform var(--transition); }
+  .nav-btn.active { color: var(--accent2); }
+  .nav-btn.active i { transform: translateY(-1px); }
+  .nav-btn:hover { color: var(--text); }
+
+  /* ── Section Card ── */
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Add btn — hidden until edit mode */
+  .add-btn {
+    display: none;
+    align-items: center; gap: 5px;
+    background: var(--accent);
+    color: #fff;
+    border: none; border-radius: 20px;
+    padding: 5px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  .add-btn:hover { opacity: 0.85; transform: scale(0.97); }
+
+  /* Show edit controls when body has .edit-mode */
+  body.edit-mode .add-btn { display: flex; }
+  body.edit-mode .edit-ctrl { display: flex; }
+  body.edit-mode .edit-only { display: flex; }
+
+  .edit-ctrl, .edit-only { display: none; }
+
+  /* ── List Items ── */
+  .list-body { padding: 6px 0; }
+
+  .list-item {
+    display: flex; align-items: center;
+    padding: 10px 14px;
+    gap: 10px;
+    transition: background var(--transition);
+    position: relative;
+  }
+  .list-item:hover { background: rgba(255,255,255,0.03); }
+
+  .item-main { flex: 1; min-width: 0; }
+  .item-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* reorder + delete controls */
+  .reorder-btns {
+    display: none;
+    flex-direction: column; gap: 1px;
+  }
+  .reorder-btns button, .delete-btn {
+    width: 28px; height: 28px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition);
+  }
+  .reorder-btns button:hover { background: var(--border); color: var(--text); }
+  .delete-btn { background: rgba(248,113,113,0.1); color: var(--red); }
+  .delete-btn:hover { background: rgba(248,113,113,0.25); }
+
+  body.edit-mode .reorder-btns { display: flex; }
+  body.edit-mode .delete-btn   { display: flex; }
+
+  /* Hide delete when NOT in edit mode */
+  .delete-btn { display: none; }
+
+  /* ── Drag to reorder ── */
+  .list-item[draggable="true"],
+  .check-item[draggable="true"],
+  .exercise-item[draggable="true"] { cursor: grab; }
+
+  .drag-handle {
+    display: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 0 2px;
+    cursor: grab;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+  body.edit-mode .drag-handle { display: flex; align-items: center; }
+
+  .drag-over-top    { border-top:    2px solid var(--accent) !important; }
+  .drag-over-bottom { border-bottom: 2px solid var(--accent) !important; }
+  .dragging         { opacity: 0.4; }
+  .countdown {
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .countdown.red    { background: rgba(248,113,113,0.15); color: var(--red); }
+  .countdown.amber  { background: rgba(251,191,36,0.15);  color: var(--amber); }
+  .countdown.green  { background: rgba(52,211,153,0.15);  color: var(--green); }
+
+  /* ── Checkbox ── */
+  .check-item {
+    display: flex; align-items: center;
+    padding: 11px 14px; gap: 12px;
+  }
+  .check-item label { flex: 1; font-size: 14px; cursor: pointer; user-select: none; }
+
+  input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .check-item.done label { text-decoration: line-through; color: var(--text-muted); }
+
+  /* ── Physics Exercises ── */
+  .exercise-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .exercise-item:last-child { border-bottom: none; }
+
+  .exercise-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .exercise-name { flex: 1; font-size: 14px; font-weight: 500; }
+  .exercise-meta {
+    font-size: 12px; color: var(--text-muted);
+    display: flex; gap: 8px; margin-top: 4px;
+  }
+  .meta-pill {
+    background: var(--surface2);
+    border-radius: 20px; padding: 2px 8px;
+  }
+
+  .log-btn {
+    font-size: 11px; font-weight: 700;
+    background: rgba(108,99,255,0.15);
+    color: var(--accent2);
+    border: none; border-radius: 20px;
+    padding: 4px 10px; cursor: pointer;
+    transition: background var(--transition);
+    white-space: nowrap;
+  }
+  .log-btn:hover { background: rgba(108,99,255,0.3); }
+
+  .exercise-history { margin-top: 8px; }
+  .history-item {
+    font-size: 11px; color: var(--text-muted);
+    padding: 3px 0;
+    display: flex; gap: 6px;
+  }
+  .history-date { color: var(--accent2); }
+
+  /* ── Priority pin ── */
+  .priority-btn {
+    display: none;
+    width: 28px; height: 28px;
+    border: none; border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px; cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: color var(--transition);
+    flex-shrink: 0;
+  }
+  body.edit-mode .priority-btn { display: flex; }
+  .priority-btn.pinned { color: var(--amber); }
+
+  .list-item.pinned,
+  .check-item.pinned,
+  .exercise-item.pinned {
+    border-left: 3px solid var(--amber);
+  }
+
+  .empty-state {
+    text-align: center; padding: 28px 16px;
+    color: var(--text-muted); font-size: 13px;
+  }
+  .empty-state i { font-size: 26px; margin-bottom: 8px; display: block; opacity: 0.4; }
+
+  /* ── Word count ── */
+  #word-count {
+    font-size: 12px; color: var(--text-muted);
+    text-align: right; padding: 6px 2px;
+  }
+
+  /* ── Notes textarea ── */
+  .notes-area {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 14px; line-height: 1.6;
+    padding: 14px;
+    resize: none; outline: none;
+    min-height: 340px;
+    font-family: inherit;
+    transition: border-color var(--transition);
+  }
+  .notes-area:focus { border-color: var(--accent); }
+
+  /* ── Problems Editor (full-page overlay) ── */
+  #problem-editor {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  }
+  #problem-editor.open { transform: translateX(0); }
+
+  #editor-header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  #back-btn {
+    width: 34px; height: 34px;
+    border: none; border-radius: 50%;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition);
+  }
+  #back-btn:hover { background: var(--border); color: var(--text); }
+  #editor-title { font-size: 16px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #autosave-indicator { font-size: 11px; color: var(--text-muted); }
+
+  #problem-textarea {
+    flex: 1;
+    background: transparent;
+    border: none; outline: none;
+    color: var(--text);
+    font-size: 15px; line-height: 1.7;
+    padding: 20px 18px;
+    resize: none;
+    font-family: inherit;
+  }
+
+  /* ── Has-notes badge ── */
+  .notes-badge {
+    font-size: 10px; font-weight: 700;
+    background: rgba(108,99,255,0.2);
+    color: var(--accent2);
+    border-radius: 20px; padding: 2px 7px;
+    margin-left: 6px;
+  }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 0 14px; }
+
+  /* ── Modal for add inputs ── */
+  #modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 300;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  #modal-box {
+    width: 100%; max-width: 430px;
+    background: var(--surface);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 20px 18px 32px;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  }
+  #modal-overlay.open #modal-box { transform: translateY(0); }
+
+  #modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  .modal-field { margin-bottom: 12px; }
+  .modal-field label { font-size: 12px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 5px; letter-spacing: 0.5px; }
+  .modal-field input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text); font-size: 14px;
+    padding: 10px 12px; outline: none;
+    transition: border-color var(--transition);
+    font-family: inherit;
+  }
+  .modal-field input:focus { border-color: var(--accent); }
+
+  .modal-row { display: flex; gap: 10px; }
+  .modal-row .modal-field { flex: 1; }
+
+  #modal-confirm {
+    width: 100%; padding: 13px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; margin-top: 8px;
+    transition: opacity var(--transition);
+  }
+  #modal-confirm:hover { opacity: 0.85; }
+
+  /* ── Scrollbar ── */
+  #content::-webkit-scrollbar { width: 3px; }
+  #content::-webkit-scrollbar-track { background: transparent; }
+  #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  /* ── Misc ── */
+  .fade-in { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── AI Tab ── */
+  .ai-tab-panel {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    padding: 0 !important;
+  }
+  .ai-tab-panel.active {
+    display: flex !important;
+  }
+
+  #ai-chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 14px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+  }
+
+  #chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  .chat-msg {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .chat-msg.user { align-items: flex-end; }
+  .chat-msg.assistant { align-items: flex-start; }
+
+  .chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .chat-msg.user .chat-bubble {
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-msg.assistant .chat-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  .chat-bubble h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent2);
+    margin: 10px 0 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .chat-bubble h3:first-child { margin-top: 0; }
+  .chat-bubble ul { padding-left: 16px; margin: 4px 0; }
+  .chat-bubble li { margin-bottom: 3px; }
+  .chat-bubble strong { color: var(--accent2); }
+  .chat-bubble em { color: var(--amber); font-style: normal; }
+  .chat-bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+  .chat-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 0 4px;
+  }
+
+  .chat-typing {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+    width: fit-content;
+  }
+  .chat-typing span {
+    width: 7px; height: 7px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: typingBounce 1.2s infinite;
+  }
+  .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  #ai-input-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 12px calc(var(--nav-h) + 10px);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #ai-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 9px 14px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
+    max-height: 100px;
+    overflow-y: auto;
+    transition: border-color var(--transition);
+  }
+  #ai-input:focus { border-color: var(--accent); }
+
+  #ai-send-btn {
+    width: 38px; height: 38px;
+    background: var(--accent);
+    color: #fff;
+    border: none; border-radius: 50%;
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  #ai-send-btn:hover { opacity: 0.85; }
+  #ai-send-btn:active { transform: scale(0.92); }
+  #ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #ai-clear-btn {
+    width: 34px; height: 34px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: none; border-radius: 50%;
+    font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--transition), color var(--transition);
+  }
+  #ai-clear-btn:hover { background: var(--border); color: var(--text); }
+
+  #ai-setup { padding: 16px; }
+
+  /* ── Confirmation card ── */
+  .confirm-card {
+    background: var(--surface2) !important;
+    border: 1px solid var(--accent) !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+  }
+  .confirm-header {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--accent2); margin-bottom: 8px;
+  }
+  .confirm-action { font-size: 14px; margin-bottom: 4px; }
+  .confirm-detail {
+    font-size: 13px; color: var(--text-muted);
+    margin-bottom: 12px; margin-top: 4px;
+    font-family: monospace; background: var(--bg);
+    padding: 6px 10px; border-radius: 6px;
+  }
+  .confirm-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .confirm-yes {
+    flex: 1; padding: 9px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .confirm-yes:hover { opacity: 0.85; }
+  .confirm-no {
+    flex: 1; padding: 9px;
+    background: var(--surface); color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .confirm-no:hover { background: var(--border); color: var(--text); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <header id="header">
+    <span id="tab-title">School</span>
+    <button id="edit-btn" title="Toggle edit mode"><i class="fa-solid fa-pen"></i></button>
+  </header>
+
+  <!-- Main content -->
+  <main id="content">
+
+    <!-- SCHOOL TAB -->
+    <div id="tab-school" class="tab-panel active">
+      <!-- Exams -->
+      <div class="section-card" id="sec-exams">
+        <div class="section-header">
+          <span class="section-title">Exams</span>
+          <button class="add-btn" data-action="add" data-section="exams"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-exams"></div>
+      </div>
+      <!-- Labs -->
+      <div class="section-card" id="sec-labs">
+        <div class="section-header">
+          <span class="section-title">Labs</span>
+          <button class="add-btn" data-action="add" data-section="labs"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-labs"></div>
+      </div>
+    </div>
+    <div id="tab-health" class="tab-panel">
+      <!-- Rehab -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Rehab Exercises</span>
+          <button class="add-btn" data-action="add" data-section="rehab"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-rehab"></div>
+      </div>
+      <!-- Motion -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Motion Goals</span>
+          <button class="add-btn" data-action="add" data-section="motion"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-motion"></div>
+      </div>
+      <!-- Physics -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Physics Exercises</span>
+          <button class="add-btn" data-action="add" data-section="physics"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-physics"></div>
+      </div>
+    </div>
+
+    <!-- PROJECTS TAB -->
+    <div id="tab-projects" class="tab-panel">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Business</span>
+          <button class="add-btn" data-action="add" data-section="business"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-business"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">CS Projects</span>
+          <button class="add-btn" data-action="add" data-section="cs"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-cs"></div>
+      </div>
+    </div>
+
+    <!-- PROBLEMS TAB -->
+    <div id="tab-problems" class="tab-panel">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Rules</span>
+          <button class="add-btn" data-action="add" data-section="rules"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-rules"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Problems</span>
+          <button class="add-btn" data-action="add" data-section="problems"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-problems"></div>
+      </div>
+    </div>
+
+    <!-- NOTES TAB -->
+    <div id="tab-notes" class="tab-panel">
+      <div id="word-count">0 words</div>
+      <textarea class="notes-area" id="notes-textarea" placeholder="Start typing your notes…"></textarea>
+    </div>
+
+    <!-- AI TAB -->
+    <div id="tab-ai" class="tab-panel ai-tab-panel">
+      <div id="ai-setup" style="display:none;">
+        <div class="section-card" style="margin-bottom:14px;">
+          <div class="section-header"><span class="section-title">🐋 DeepSeek Setup</span></div>
+          <div style="padding:16px;">
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">Enter the URL of your PHP proxy and the secret password you set in <strong style="color:var(--accent2)">proxy.php</strong></p>
+            <input id="proxy-url-input" type="url" placeholder="https://yourdomain.com/proxy.php" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:10px 12px;outline:none;font-family:inherit;margin-bottom:10px;">
+            <input id="proxy-token-input" type="password" placeholder="Your secret password" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:10px 12px;outline:none;font-family:inherit;margin-bottom:10px;">
+            <button id="save-api-key" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;">Save & Start</button>
+          </div>
+        </div>
+      </div>
+      <div id="ai-instructions-panel" style="display:none;">
+        <div class="section-card" style="margin-bottom:14px;">
+          <div class="section-header"><span class="section-title">🧠 AI Instructions</span></div>
+          <div style="padding:16px;">
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">This controls the AI's tone, personality, and what it should focus on. Core app behavior (tool usage, formatting) always stays intact regardless of what you write here. Edit freely; leave blank and reset to restore the built-in default.</p>
+            <textarea id="ai-instructions-textarea" style="width:100%;min-height:240px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;padding:10px 12px;outline:none;font-family:inherit;margin-bottom:10px;resize:vertical;line-height:1.5;"></textarea>
+            <div style="display:flex;gap:8px;">
+              <button id="ai-instructions-save" style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
+              <button id="ai-instructions-reset" style="flex:1;padding:12px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;">Reset to Default</button>
+            </div>
+            <button id="ai-instructions-close" style="width:100%;margin-top:8px;padding:10px;background:transparent;color:var(--text-muted);border:none;font-size:13px;cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div id="ai-chat-area">
+        <div id="chat-messages"></div>
+      </div>
+      <div id="ai-input-bar">
+        <button id="ai-clear-btn" title="Clear chat"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+        <textarea id="ai-input" placeholder="Ask me anything about your day…" rows="1"></textarea>
+        <button id="ai-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" data-tab="school"><i class="fa-solid fa-graduation-cap"></i>School</button>
+    <button class="nav-btn" data-tab="health"><i class="fa-solid fa-heart-pulse"></i>Health</button>
+    <button class="nav-btn" data-tab="projects"><i class="fa-solid fa-diagram-project"></i>Projects</button>
+    <button class="nav-btn" data-tab="problems"><i class="fa-solid fa-triangle-exclamation"></i>Problems</button>
+    <button class="nav-btn" data-tab="notes"><i class="fa-solid fa-note-sticky"></i>Notes</button>
+    <button class="nav-btn" data-tab="ai"><i class="fa-solid fa-robot"></i>AI</button>
+  </nav>
+
+  <!-- Problem full-page editor -->
+  <div id="problem-editor">
+    <div id="editor-header">
+      <button id="back-btn"><i class="fa-solid fa-arrow-left"></i></button>
+      <span id="editor-title"></span>
+      <span id="autosave-indicator"></span>
+    </div>
+    <textarea id="problem-textarea" placeholder="Write your notes about this problem…"></textarea>
+  </div>
+
+  <!-- Add modal -->
+  <div id="modal-overlay">
+    <div id="modal-box">
+      <div id="modal-title">Add Item</div>
+      <div id="modal-fields"></div>
+      <button id="modal-confirm">Add</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================
+   LIFE MANAGER — Vanilla JS
+   ===================================================== */
+
+// ── Storage helpers ──
+const LS = {
+  get: (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+// ── App state ──
+const TODAY = () => new Date().toISOString().slice(0, 10);
+
+// Default data
+const DEFAULTS = {
+  exams:    [],
+  labs:     [],
+  rehab:    ['Shoulder stretch', 'Knee flexion', 'Ankle circles'].map(t => ({ id: uid(), title: t })),
+  motion:   ['Walk 10,000 steps', 'Stretch 15min', 'Stand 2hrs'].map(t => ({ id: uid(), title: t })),
+  physics:  [],
+  business: [],
+  cs:       [],
+  problems: [],
+  rules:    [],
+  notes:    ''
+};
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+// Load persisted data
+const data = {
+  exams:    LS.get('lm_exams',    DEFAULTS.exams),
+  labs:     LS.get('lm_labs',     DEFAULTS.labs),
+  rehab:    LS.get('lm_rehab',    DEFAULTS.rehab),
+  motion:   LS.get('lm_motion',   DEFAULTS.motion),
+  physics:  LS.get('lm_physics',  DEFAULTS.physics),
+  business: LS.get('lm_business', DEFAULTS.business),
+  cs:       LS.get('lm_cs',       DEFAULTS.cs),
+  problems: LS.get('lm_problems', DEFAULTS.problems),
+  rules:    LS.get('lm_rules',    DEFAULTS.rules),
+  notes:    LS.get('lm_notes',    DEFAULTS.notes),
+  checks:   LS.get('lm_checks',   {}),  // { date: { rehab: {id:bool}, motion: {id:bool} } }
+  physLogs: LS.get('lm_physlogs', {}),  // { exerciseId: [{date, sets, reps, weight}] }
+  probNotes: LS.get('lm_probnotes', {}), // { problemId: text }
+};
+
+function save(key) { LS.set('lm_' + key, data[key]); }
+
+// ── Daily check auto-reset ──
+function getTodayChecks(section) {
+  const today = TODAY();
+  if (!data.checks[today]) data.checks[today] = {};
+  if (!data.checks[today][section]) data.checks[today][section] = {};
+  return data.checks[today][section];
+}
+function setCheck(section, id, val) {
+  const today = TODAY();
+  if (!data.checks[today]) data.checks[today] = {};
+  if (!data.checks[today][section]) data.checks[today][section] = {};
+  data.checks[today][section][id] = val;
+  save('checks');
+}
+
+// ── Countdown helpers ──
+function daysUntil(dateStr) {
+  const now  = new Date(); now.setHours(0,0,0,0);
+  const exam = new Date(dateStr + 'T00:00:00');
+  return Math.ceil((exam - now) / 86400000);
+}
+function countdownClass(days) {
+  if (days <= 2) return 'red';
+  if (days <= 7) return 'amber';
+  return 'green';
+}
+function countdownLabel(days) {
+  if (days < 0) return 'Past';
+  if (days === 0) return 'Today!';
+  if (days === 1) return '1 day';
+  return days + ' days';
+}
+
+// ── DOM references ──
+const editBtn       = document.getElementById('edit-btn');
+const tabTitle      = document.getElementById('tab-title');
+const bottomNav     = document.getElementById('bottom-nav');
+const modalOverlay  = document.getElementById('modal-overlay');
+const modalBox      = document.getElementById('modal-box');
+const modalTitle    = document.getElementById('modal-title');
+const modalFields   = document.getElementById('modal-fields');
+const modalConfirm  = document.getElementById('modal-confirm');
+const problemEditor = document.getElementById('problem-editor');
+const editorTitle   = document.getElementById('editor-title');
+const backBtn       = document.getElementById('back-btn');
+const probTA        = document.getElementById('problem-textarea');
+const autosaveEl    = document.getElementById('autosave-indicator');
+const notesTA       = document.getElementById('notes-textarea');
+const wordCountEl   = document.getElementById('word-count');
+
+let currentTab = 'school';
+let editMode   = false;
+let currentProblemId = null;
+let autosaveTimer = null;
+
+// Tab display names
+const TAB_NAMES = { school:'School', health:'Health', projects:'Projects', problems:'Problems', notes:'Notes', ai:'AI Assistant' };
+
+// ── Render functions ──
+
+// ── Priority ──
+function isPinned(section, id)     { return (LS.get('lm_pins', {})[section] || {})[id] || false; }
+function togglePin(section, id) {
+  const pins = LS.get('lm_pins', {});
+  if (!pins[section]) pins[section] = {};
+  pins[section][id] = !pins[section][id];
+  LS.set('lm_pins', pins);
+  renderSection(section);
+}
+function sortPinned(section, items) {
+  return [...items].sort((a, b) => (isPinned(section, b.id) ? 1 : 0) - (isPinned(section, a.id) ? 1 : 0));
+}
+function pinBtn(section, id) {
+  const pinned = isPinned(section, id);
+  return `<button class="priority-btn${pinned ? ' pinned' : ''}" data-action="pin" data-section="${section}" data-id="${id}" title="Toggle priority"><i class="fa-solid fa-star"></i></button>`;
+}
+
+/* Generic simple list (business, cs) */
+function renderSimpleList(section, listEl) {
+  const items = sortPinned(section, data[section]);
+  listEl.innerHTML = '';
+  if (!items.length) { listEl.innerHTML = emptyState('Nothing here yet'); return; }
+  items.forEach(item => {
+    const pinned = isPinned(section, item.id);
+    const div = document.createElement('div');
+    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
+    div.dataset.id = item.id;
+    div.dataset.section = section;
+    div.innerHTML = `
+      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+      ${pinBtn(section, item.id)}
+      <div class="item-main"><span class="item-title">${escHtml(item.title)}</span></div>
+      <button class="delete-btn" data-action="delete" data-section="${section}" data-id="${item.id}" title="Delete">
+        <i class="fa-solid fa-trash"></i>
+      </button>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, section);
+}
+
+/* Labs list — separate render to support optional deadline */
+function renderLabs() {
+  const listEl = document.getElementById('list-labs');
+  const items  = sortPinned('labs', data.labs);
+  listEl.innerHTML = '';
+  if (!items.length) { listEl.innerHTML = emptyState('Nothing here yet'); return; }
+  items.forEach(item => {
+    const pinned = isPinned('labs', item.id);
+    const div = document.createElement('div');
+    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
+    div.dataset.id = item.id;
+    div.dataset.section = 'labs';
+    let deadlineBadge = '';
+    if (item.date) {
+      const days = daysUntil(item.date);
+      deadlineBadge = `<span class="countdown ${countdownClass(days)}">${countdownLabel(days)}</span>`;
+    }
+    div.innerHTML = `
+      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+      ${pinBtn('labs', item.id)}
+      <div class="item-main">
+        <span class="item-title">${escHtml(item.title)}</span>
+        ${item.date ? `<div class="item-sub">${item.date}</div>` : ''}
+      </div>
+      ${deadlineBadge}
+      <button class="delete-btn" data-action="delete" data-section="labs" data-id="${item.id}" title="Delete">
+        <i class="fa-solid fa-trash"></i>
+      </button>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, 'labs');
+}
+
+/* Exams list */
+function renderExams() {
+  const listEl = document.getElementById('list-exams');
+  listEl.innerHTML = '';
+  if (!data.exams.length) { listEl.innerHTML = emptyState('No exams added'); return; }
+  sortPinned('exams', data.exams).forEach(item => {
+    const days   = daysUntil(item.date);
+    const cls    = countdownClass(days);
+    const pinned = isPinned('exams', item.id);
+    const div    = document.createElement('div');
+    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
+    div.dataset.id = item.id;
+    div.dataset.section = 'exams';
+    div.innerHTML = `
+      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+      ${pinBtn('exams', item.id)}
+      <div class="item-main">
+        <div class="item-title">${escHtml(item.title)}</div>
+        <div class="item-sub">${item.date}</div>
+      </div>
+      <span class="countdown ${cls}">${countdownLabel(days)}</span>
+      <button class="delete-btn" data-action="delete" data-section="exams" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, 'exams');
+}
+
+/* Checklist (rehab / motion) */
+function renderChecklist(section) {
+  const listEl = document.getElementById('list-' + section);
+  const checks = getTodayChecks(section);
+  listEl.innerHTML = '';
+  if (!data[section].length) { listEl.innerHTML = emptyState('Nothing here yet'); return; }
+  sortPinned(section, data[section]).forEach(item => {
+    const checked = !!checks[item.id];
+    const pinned  = isPinned(section, item.id);
+    const div = document.createElement('div');
+    div.className = 'check-item' + (checked ? ' done' : '') + (pinned ? ' pinned' : '') + ' fade-in';
+    div.dataset.id = item.id;
+    div.dataset.section = section;
+    div.innerHTML = `
+      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+      ${pinBtn(section, item.id)}
+      <input type="checkbox" id="chk-${item.id}" data-section="${section}" data-id="${item.id}" ${checked ? 'checked' : ''}>
+      <label for="chk-${item.id}">${escHtml(item.title)}</label>
+      <button class="delete-btn" data-action="delete" data-section="${section}" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, section);
+}
+
+function renderPhysics() {
+  const listEl = document.getElementById('list-physics');
+  listEl.innerHTML = '';
+  if (!data.physics.length) { listEl.innerHTML = emptyState('No exercises added'); return; }
+  sortPinned('physics', data.physics).forEach(ex => {
+    const logs   = (data.physLogs[ex.id] || []).slice(-5);
+    const pinned = isPinned('physics', ex.id);
+    const div    = document.createElement('div');
+    div.className = 'exercise-item fade-in' + (pinned ? ' pinned' : '');
+    div.dataset.id = ex.id;
+    div.dataset.section = 'physics';
+    const histHtml = logs.length
+      ? logs.map(l => `<div class="history-item"><span class="history-date">${l.date}</span> ${l.sets}×${l.reps} @ ${l.weight}kg</div>`).join('')
+      : '<div class="history-item" style="font-style:italic">No logs yet</div>';
+    div.innerHTML = `
+      <div class="exercise-row">
+        <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+        ${pinBtn('physics', ex.id)}
+        <div class="item-main">
+          <div class="exercise-name">${escHtml(ex.title)}</div>
+          <div class="exercise-meta">
+            <span class="meta-pill">${ex.sets} sets</span>
+            <span class="meta-pill">${ex.reps} reps</span>
+            <span class="meta-pill">${ex.weight} kg</span>
+          </div>
+        </div>
+        <button class="log-btn" data-action="log" data-id="${ex.id}">Log</button>
+        <button class="delete-btn" data-action="delete" data-section="physics" data-id="${ex.id}"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <div class="exercise-history">${histHtml}</div>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, 'physics');
+}
+
+/* Problems list */
+function renderProblems() {
+  const listEl = document.getElementById('list-problems');
+  listEl.innerHTML = '';
+  if (!data.problems.length) { listEl.innerHTML = emptyState('No problems listed'); return; }
+  sortPinned('problems', data.problems).forEach(item => {
+    const hasNotes = !!(data.probNotes[item.id] && data.probNotes[item.id].trim());
+    const pinned   = isPinned('problems', item.id);
+    const div = document.createElement('div');
+    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
+    div.style.cursor = 'pointer';
+    div.dataset.id = item.id;
+    div.dataset.section = 'problems';
+    div.innerHTML = `
+      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+      ${pinBtn('problems', item.id)}
+      <div class="item-main" data-action="open-problem" data-id="${item.id}">
+        <span class="item-title">${escHtml(item.title)}</span>${hasNotes ? '<span class="notes-badge">Has notes</span>' : ''}
+      </div>
+      <button class="delete-btn" data-action="delete" data-section="problems" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, 'problems');
+}
+
+/* Notes tab */
+function initNotes() {
+  notesTA.value = data.notes || '';
+  updateWordCount();
+}
+function updateWordCount() {
+  const words = notesTA.value.trim() ? notesTA.value.trim().split(/\s+/).length : 0;
+  wordCountEl.textContent = words + (words === 1 ? ' word' : ' words');
+}
+
+function emptyState(msg) {
+  return `<div class="empty-state"><i class="fa-solid fa-inbox"></i>${msg}</div>`;
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Render all */
+function renderAll() {
+  renderExams();
+  renderLabs();
+  renderChecklist('rehab');
+  renderChecklist('motion');
+  renderPhysics();
+  renderSimpleList('business', document.getElementById('list-business'));
+  renderSimpleList('cs',       document.getElementById('list-cs'));
+  renderProblems();
+  renderSimpleList('rules', document.getElementById('list-rules'));
+  initNotes();
+}
+
+// ── Drag-to-reorder engine (touch + mouse) ──
+function initDrag(container, section) {
+  if (!container) return;
+  let dragEl = null, startY = 0, startIdx = 0;
+
+  function getItems() { return [...container.children].filter(c => c.dataset.id); }
+  function getIdx(el) { return getItems().indexOf(el); }
+
+  function onDragStart(e, el) {
+    if (!editMode) return;
+    dragEl = el;
+    startIdx = getIdx(el);
+    startY = (e.touches ? e.touches[0].clientY : e.clientY);
+    el.classList.add('dragging');
+    e.dataTransfer && (e.dataTransfer.effectAllowed = 'move');
+  }
+
+  function onDragOver(e, el) {
+    if (!dragEl || el === dragEl) return;
+    e.preventDefault && e.preventDefault();
+    const rect   = el.getBoundingClientRect();
+    const midY   = rect.top + rect.height / 2;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    getItems().forEach(i => i.classList.remove('drag-over-top', 'drag-over-bottom'));
+    el.classList.add(clientY < midY ? 'drag-over-top' : 'drag-over-bottom');
+  }
+
+  function onDrop(e, el) {
+    if (!dragEl || el === dragEl) return;
+    e.preventDefault && e.preventDefault();
+    const rect    = el.getBoundingClientRect();
+    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+    const before  = clientY < rect.top + rect.height / 2;
+    const fromIdx = getIdx(dragEl);
+    let   toIdx   = getIdx(el);
+    if (!before) toIdx++;
+    if (toIdx > fromIdx) toIdx--;
+
+    const arr = data[section];
+    const [moved] = arr.splice(fromIdx, 1);
+    arr.splice(toIdx, 0, moved);
+    save(section);
+    cleanup();
+    renderSection(section);
+  }
+
+  function cleanup() {
+    getItems().forEach(i => i.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom'));
+    dragEl = null;
+  }
+
+  // Mouse events (desktop)
+  getItems().forEach(el => {
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart',  e => onDragStart(e, el));
+    el.addEventListener('dragover',   e => onDragOver(e, el));
+    el.addEventListener('drop',       e => onDrop(e, el));
+    el.addEventListener('dragend',    cleanup);
+    el.addEventListener('dragleave',  () => el.classList.remove('drag-over-top','drag-over-bottom'));
+  });
+
+  // Touch events (mobile)
+  getItems().forEach(el => {
+    el.addEventListener('touchstart', e => {
+      const handle = e.target.closest('.drag-handle');
+      if (!handle || !editMode) return;
+      onDragStart(e, el);
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      if (!dragEl) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const under = document.elementFromPoint(touch.clientX, touch.clientY);
+      const target = under?.closest('[data-id]');
+      if (target && target !== dragEl) onDragOver(e, target);
+    }, { passive: false });
+
+    el.addEventListener('touchend', e => {
+      if (!dragEl) return;
+      const touch = e.changedTouches[0];
+      const under = document.elementFromPoint(touch.clientX, touch.clientY);
+      const target = under?.closest('[data-id]');
+      if (target && target !== dragEl) onDrop(e, target);
+      else cleanup();
+    });
+  });
+}
+
+// ── Tab switching ──
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  tabTitle.textContent = TAB_NAMES[tab];
+  setEditMode(false);  // exit edit mode on tab switch
+  document.getElementById('content').scrollTop = 0;
+}
+
+// ── Edit mode ──
+function setEditMode(on) {
+  editMode = on;
+  editBtn.classList.toggle('active', on);
+  editBtn.innerHTML = on ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-pen"></i>';
+  document.body.classList.toggle('edit-mode', on);
+}
+
+// ── Reorder ──
+function moveItem(section, id, dir) {
+  const arr = data[section];
+  const idx = arr.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  const target = dir === 'up' ? idx - 1 : idx + 1;
+  if (target < 0 || target >= arr.length) return;
+  [arr[idx], arr[target]] = [arr[target], arr[idx]];
+  save(section);
+  renderSection(section);
+}
+
+/* Render only the affected section */
+function renderSection(section) {
+  switch (section) {
+    case 'exams':    renderExams(); break;
+    case 'labs':     renderLabs(); break;
+    case 'rehab':    renderChecklist('rehab'); break;
+    case 'motion':   renderChecklist('motion'); break;
+    case 'physics':  renderPhysics(); break;
+    case 'business': renderSimpleList('business', document.getElementById('list-business')); break;
+    case 'cs':       renderSimpleList('cs',       document.getElementById('list-cs')); break;
+    case 'problems': renderProblems(); break;
+    case 'rules':    renderSimpleList('rules', document.getElementById('list-rules')); break;
+  }
+}
+
+// ── Delete ──
+function deleteItem(section, id) {
+  data[section] = data[section].filter(x => x.id !== id);
+  save(section);
+  renderSection(section);
+}
+
+// ── Log physics ──
+function logExercise(id) {
+  const ex = data.physics.find(e => e.id === id);
+  if (!ex) return;
+  if (!data.physLogs[id]) data.physLogs[id] = [];
+  data.physLogs[id].push({ date: TODAY(), sets: ex.sets, reps: ex.reps, weight: ex.weight });
+  // keep max 20
+  if (data.physLogs[id].length > 20) data.physLogs[id] = data.physLogs[id].slice(-20);
+  save('physLogs');
+  renderPhysics();
+}
+
+// ── Modal for adding ──
+let pendingSection = null;
+
+const MODAL_CONFIGS = {
+  exams:    { title: 'Add Exam',      fields: [{ id:'title', label:'Title', type:'text', placeholder:'e.g. Calculus Final' }, { id:'date', label:'Date', type:'date' }] },
+  labs:     { title: 'Add Lab',       fields: [{ id:'title', label:'Title', type:'text', placeholder:'e.g. Chemistry Lab 3' }, { id:'date', label:'Deadline (optional)', type:'date', optional: true }] },
+  rehab:    { title: 'Add Exercise',  fields: [{ id:'title', label:'Exercise name', type:'text', placeholder:'' }] },
+  motion:   { title: 'Add Goal',      fields: [{ id:'title', label:'Goal', type:'text', placeholder:'' }] },
+  physics:  { title: 'Add Exercise',  fields: [
+                { id:'title',  label:'Exercise name', type:'text',   placeholder:'e.g. Bench Press' },
+                { id:'sets',   label:'Sets',          type:'number', placeholder:'3', min:1 },
+                { id:'reps',   label:'Reps',          type:'number', placeholder:'10', min:1 },
+                { id:'weight', label:'Weight (kg)',   type:'number', placeholder:'60', min:0, step:0.5 }
+              ]},
+  business: { title: 'Add Project',   fields: [{ id:'title', label:'Title', type:'text', placeholder:'' }] },
+  cs:       { title: 'Add Project',   fields: [{ id:'title', label:'Title', type:'text', placeholder:'' }] },
+  problems: { title: 'Add Problem',   fields: [{ id:'title', label:'Problem', type:'text', placeholder:'' }] },
+  rules:    { title: 'Add Rule',      fields: [{ id:'title', label:'Rule', type:'text', placeholder:'e.g. No phone after 10pm' }] },
+};
+
+function openModal(section) {
+  pendingSection = section;
+  const cfg = MODAL_CONFIGS[section];
+  if (!cfg) return;
+  modalTitle.textContent = cfg.title;
+
+  // Build fields — pair sets/reps/weight in a row
+  let html = '';
+  let i = 0;
+  while (i < cfg.fields.length) {
+    const f = cfg.fields[i];
+    if (f.id === 'sets') {
+      // Group sets, reps, weight
+      const [s, r, w] = cfg.fields.slice(i, i+3);
+      html += `<div class="modal-row">
+        ${fieldHtml(s)}${fieldHtml(r)}${fieldHtml(w)}
+      </div>`;
+      i += 3;
+    } else {
+      html += `<div class="modal-field">${fieldHtml(f)}</div>`;
+      i++;
+    }
+  }
+  modalFields.innerHTML = html;
+  modalOverlay.classList.add('open');
+  // focus first input
+  setTimeout(() => { const first = modalFields.querySelector('input'); if (first) first.focus(); }, 250);
+}
+
+function fieldHtml(f) {
+  const extra = f.min !== undefined ? `min="${f.min}"` : '';
+  const step  = f.step ? `step="${f.step}"` : '';
+  return `<div class="modal-field">
+    <label for="mf-${f.id}">${f.label}</label>
+    <input id="mf-${f.id}" type="${f.type}" placeholder="${f.placeholder || ''}" ${extra} ${step}>
+  </div>`;
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('open');
+  pendingSection = null;
+}
+
+function confirmAdd() {
+  if (!pendingSection) return;
+  const cfg = MODAL_CONFIGS[pendingSection];
+  const item = { id: uid() };
+  let valid = true;
+
+  cfg.fields.forEach(f => {
+    const el = document.getElementById('mf-' + f.id);
+    const val = el ? el.value.trim() : '';
+    if (f.type === 'text' && !val && !f.optional) { valid = false; el && el.focus(); return; }
+    if (f.type === 'number') item[f.id] = parseFloat(val) || 0;
+    else if (val) item[f.id] = val;  // only set if non-empty (handles optional date)
+  });
+
+  if (!valid) return;
+
+  data[pendingSection].push(item);
+  save(pendingSection);
+  renderSection(pendingSection);
+  closeModal();
+}
+
+// ── Problem editor ──
+function openProblemEditor(id) {
+  const prob = data.problems.find(p => p.id === id);
+  if (!prob) return;
+  currentProblemId = id;
+  editorTitle.textContent = prob.title;
+  probTA.value = data.probNotes[id] || '';
+  autosaveEl.textContent = '';
+  problemEditor.classList.add('open');
+  setTimeout(() => probTA.focus(), 300);
+}
+
+function closeProblemEditor() {
+  problemEditor.classList.remove('open');
+  currentProblemId = null;
+  renderProblems();
+}
+
+// Auto-save problem notes
+probTA.addEventListener('input', () => {
+  if (!currentProblemId) return;
+  clearTimeout(autosaveTimer);
+  autosaveEl.textContent = 'Saving…';
+  autosaveTimer = setTimeout(() => {
+    data.probNotes[currentProblemId] = probTA.value;
+    save('probNotes');
+    autosaveEl.textContent = 'Saved';
+    setTimeout(() => { autosaveEl.textContent = ''; }, 1500);
+  }, 600);
+});
+
+// ── Notes auto-save ──
+notesTA.addEventListener('input', () => {
+  updateWordCount();
+  clearTimeout(notesTA._t);
+  notesTA._t = setTimeout(() => { data.notes = notesTA.value; save('notes'); }, 500);
+});
+
+// ── Event delegation (content area) ──
+document.getElementById('content').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action  = btn.dataset.action;
+  const section = btn.dataset.section;
+  const id      = btn.dataset.id;
+
+  if (action === 'add')    { openModal(section); return; }
+  if (action === 'delete') { deleteItem(section, id); return; }
+  if (action === 'pin')    { togglePin(section, id); return; }
+  if (action === 'up')     { moveItem(section, id, 'up'); return; }
+  if (action === 'down')   { moveItem(section, id, 'down'); return; }
+  if (action === 'log')    { logExercise(id); return; }
+  if (action === 'open-problem') { openProblemEditor(id); return; }
+});
+
+// Checkbox change delegation
+document.getElementById('content').addEventListener('change', e => {
+  const cb = e.target.closest('input[type="checkbox"]');
+  if (!cb) return;
+  const section = cb.dataset.section;
+  const id      = cb.dataset.id;
+  setCheck(section, id, cb.checked);
+  // Toggle done class on parent
+  cb.closest('.check-item').classList.toggle('done', cb.checked);
+});
+
+// ── Bottom nav ──
+bottomNav.addEventListener('click', e => {
+  const btn = e.target.closest('.nav-btn');
+  if (btn) switchTab(btn.dataset.tab);
+});
+
+// ── Edit btn ──
+editBtn.addEventListener('click', () => {
+  if (currentTab === 'ai') {
+    AI.openInstructionsPanel();
+  } else {
+    setEditMode(!editMode);
+  }
+});
+
+// ── Modal ──
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+modalConfirm.addEventListener('click', confirmAdd);
+// Allow Enter to confirm
+modalFields.addEventListener('keydown', e => { if (e.key === 'Enter') confirmAdd(); });
+
+// ── Back btn ──
+backBtn.addEventListener('click', closeProblemEditor);
+
+// ── Refresh countdown every minute ──
+setInterval(() => { if (currentTab === 'school') renderExams(); }, 60000);
+
+// ── Init ──
+renderAll();
+
+/* =====================================================
+   AI ASSISTANT
+   ===================================================== */
+
+const AI = {
+  // Storage
+  getKey: () => localStorage.getItem('lm_ai_key') || '',
+  setKey: (k) => localStorage.setItem('lm_ai_key', k),
+  getProvider: () => localStorage.getItem('lm_ai_provider') || 'anthropic',
+  setProvider: (p) => localStorage.setItem('lm_ai_provider', p),
+  getProxyUrl: () => localStorage.getItem('lm_ai_proxy_url') || '',
+  setProxyUrl: (u) => localStorage.setItem('lm_ai_proxy_url', u),
+  getProxyToken: () => localStorage.getItem('lm_ai_proxy_token') || '',
+  setProxyToken: (t) => localStorage.setItem('lm_ai_proxy_token', t),
+  getHistory: () => { try { return JSON.parse(localStorage.getItem('lm_ai_history') || '[]'); } catch { return []; } },
+  setHistory: (h) => localStorage.setItem('lm_ai_history', JSON.stringify(h.slice(-30))),
+  getCustomPrompt: () => localStorage.getItem('lm_ai_custom_prompt') || '',
+  setCustomPrompt: (p) => localStorage.setItem('lm_ai_custom_prompt', p),
+  clearCustomPrompt: () => localStorage.removeItem('lm_ai_custom_prompt'),
+
+  // ── Keyword scoring — which sections does this message touch? ──
+  scoreMessage(msg) {
+    const m = msg.toLowerCase();
+    const scores = {
+      school:   0,
+      health:   0,
+      projects: 0,
+      problems: 0,
+      notes:    0,
+      general:  0,
+    };
+
+    // School
+    if (/exam|test|quiz|midterm|final|study|lecture|lab|assignment|deadline|due|grade|subject|course|class/.test(m)) scores.school += 2;
+    if (data.exams.some(e => m.includes(e.title.toLowerCase()))) scores.school += 3;
+    if (data.labs.some(l => m.includes(l.title.toLowerCase()))) scores.school += 3;
+
+    // Health
+    if (/rehab|physio|exercise|workout|gym|sets|reps|weight|kg|stretch|shoulder|knee|ankle|motion|steps|walk|stand|health|pain|injury|log/.test(m)) scores.health += 2;
+    if (data.physics.some(e => m.includes(e.title.toLowerCase()))) scores.health += 3;
+    if (data.rehab.some(r => m.includes(r.title.toLowerCase()))) scores.health += 3;
+
+    // Projects
+    if (/project|business|startup|app|website|cs|code|coding|build|develop|launch|feature/.test(m)) scores.projects += 2;
+    if (data.business.some(b => m.includes(b.title.toLowerCase()))) scores.projects += 3;
+    if (data.cs.some(c => m.includes(c.title.toLowerCase()))) scores.projects += 3;
+
+    // Problems
+    if (/problem|issue|bug|error|stuck|fix|debug|trouble|challenge/.test(m)) scores.problems += 2;
+    if (data.problems.some(p => m.includes(p.title.toLowerCase()))) scores.problems += 3;
+
+    // Notes
+    if (/note|journal|wrote|write|ideas?|thought|reminder|summary/.test(m)) scores.notes += 2;
+
+    // Learning
+
+    // General / daily summary
+    if (/today|day|overview|summary|status|how am i|what should|plan|schedule|morning|evening|night/.test(m)) scores.general += 2;
+
+    return scores;
+  },
+
+  // Build context — only include sections relevant to the message
+  buildContext(userMsg) {
+    const today = TODAY();
+    const scores = this.scoreMessage(userMsg || '');
+    const topScore = Math.max(...Object.values(scores));
+
+    // If nothing matched strongly, or it's a general query, send everything
+    const sendAll = topScore < 2 || scores.general >= 2;
+
+    // Decide which sections to include
+    const include = {
+      school:   sendAll || scores.school >= 2,
+      health:   sendAll || scores.health >= 2,
+      projects: sendAll || scores.projects >= 2,
+      problems: sendAll || scores.problems >= 2,
+      notes:    sendAll || scores.notes >= 2,
+    };
+
+    const parts = [`TODAY: ${today}`];
+
+    if (include.school) {
+      const exams = data.exams.map(e => {
+        const d = daysUntil(e.date);
+        return `${e.title} (${d < 0 ? 'past' : d === 0 ? 'TODAY' : d + ' days'})`;
+      });
+      const labs = data.labs.map(l => l.title);
+      parts.push(`EXAMS & DEADLINES:\n${exams.length ? exams.join('\n') : 'None'}`);
+      parts.push(`LABS:\n${labs.length ? labs.join('\n') : 'None'}`);
+    }
+
+    if (include.health) {
+      const todayChecks = data.checks[today] || {};
+      const rehabDone = data.rehab.filter(r => todayChecks.rehab?.[r.id]).map(r => r.title);
+      const rehabTodo = data.rehab.filter(r => !todayChecks.rehab?.[r.id]).map(r => r.title);
+      const motionDone = data.motion.filter(m => todayChecks.motion?.[m.id]).map(m => m.title);
+      const motionTodo = data.motion.filter(m => !todayChecks.motion?.[m.id]).map(m => m.title);
+      const physLogs = data.physics.map(ex => {
+        const logs = data.physLogs[ex.id] || [];
+        const todayLog = logs.find(l => l.date === today);
+        return `${ex.title} (${ex.sets}×${ex.reps} @ ${ex.weight}kg)${todayLog ? ' ✓ logged today' : ''}`;
+      });
+      parts.push(`REHAB EXERCISES:\n- Done: ${rehabDone.join(', ') || 'none'}\n- Todo: ${rehabTodo.join(', ') || 'all done!'}`);
+      parts.push(`MOTION GOALS:\n- Done: ${motionDone.join(', ') || 'none'}\n- Todo: ${motionTodo.join(', ') || 'all done!'}`);
+      parts.push(`GYM EXERCISES:\n${physLogs.length ? physLogs.join('\n') : 'None set up'}`);
+    }
+
+    if (include.projects) {
+      parts.push(`PROJECTS:\nBusiness: ${data.business.map(b => b.title).join(', ') || 'None'}\nCS: ${data.cs.map(c => c.title).join(', ') || 'None'}`);
+    }
+
+    if (include.problems) {
+      parts.push(`PROBLEMS LIST:\n${data.problems.map(p => p.title).join('\n') || 'None'}`);
+      parts.push(`RULES (things the user implements to combat their problems):\n${data.rules.map(r => r.title).join('\n') || 'None'}`);
+    }
+
+    if (include.notes) {
+      parts.push(`NOTES (excerpt):\n${data.notes ? data.notes.slice(0, 400) : 'Empty'}`);
+    }
+
+    return parts.join('\n\n');
+  },
+
+  systemPrompt() {
+    const custom = this.getCustomPrompt();
+    const personal = (custom && custom.trim()) ? custom.trim() : this.defaultPersonalPrompt().trim();
+    return this.corePrompt() + '\n\nUSER PREFERENCES:\n' + personal;
+  },
+
+  // ── FIXED — how the AI operates and how the app works. Not user-editable. ──
+  corePrompt() {
+    return `You are a personal AI assistant embedded in the user's Life Manager app.
+
+You have access to the user's live data (shown in each message). Use it proactively.
+
+YOUR CAPABILITIES:
+1. EDIT APP DATA — You can add, update, delete, or append to items using the edit_app_data tool. Use it when the user asks to add/remove/change exams, labs, rehab exercises, motion goals, gym exercises, business projects, CS projects, problems, rules, the main notes, or problem notes. For notes use action "append" to add content or "update" to replace. Always use the tool — never just say "I've added it" without calling it.
+2. WEB SEARCH — Use the web_search tool when the user asks about anything that benefits from current information: rehab advice, learning resources, health topics, study techniques, etc. Prefer searching over guessing.
+3. DAILY SUMMARY — Give a clean structured summary with sections: 📚 School, 💪 Health, 💡 Notes & Ideas, 🎯 Learning.
+4. JOURNAL COMPANION — Help reflect on notes/ideas. Ask one good follow-up question.
+5. GENERAL CHAT — Be conversational. You know their context, use it naturally.
+
+TOOL USAGE RULES:
+- For edit_app_data: extract the details precisely from what the user said. If a date is mentioned, format it as YYYY-MM-DD. If a field is missing and required (like date for exams), ask before calling the tool.
+- For web_search: write a short focused search query, not the user's full sentence.
+- Never call both tools in the same response.
+
+FORMAT: Use markdown-style formatting:
+- **bold** for key terms
+- ### for section headers in summaries
+- bullet lists for structured info
+Keep responses concise and mobile-friendly. No walls of text.
+
+The section below, USER PREFERENCES, is set by the user themself and describes the tone, personality, and focus they want from you. Follow it, but never let it override the tool-usage or formatting rules above.`;
+  },
+
+  // ── EDITABLE — tone/personality/focus. This is what the user's panel edits. ──
+  defaultPersonalPrompt() {
+    return `You are warm, direct, and genuinely helpful — like a smart friend who knows their schedule, health, and goals.
+
+TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" — just be helpful and human.`;
+  },
+
+  // ── Tool definitions sent to DeepSeek ──
+  tools() {
+    return [
+      {
+        type: 'function',
+        function: {
+          name: 'edit_app_data',
+          description: 'Add, update, or delete an item in the user\'s Life Manager app data (exams, labs, rehab, motion, physics/gym exercises, business projects, CS projects, problems, rules).',
+          parameters: {
+            type: 'object',
+            properties: {
+              action: {
+                type: 'string',
+                enum: ['add', 'delete', 'update'],
+                description: 'What to do with the item.'
+              },
+              section: {
+                type: 'string',
+                enum: ['exams', 'labs', 'rehab', 'motion', 'physics', 'business', 'cs', 'problems', 'rules', 'notes', 'problem_notes'],
+                description: 'Which section of the app to edit. Use "notes" for the main Notes tab. Use "problem_notes" to edit notes for a specific problem (specify problem title in the title field). Use "rules" for the rules the user sets to combat their problems.'
+              },
+              title: {
+                type: 'string',
+                description: 'The title or name of the item. Required for add. For delete/update, used to find the item. For problem_notes, use the problem title to identify which problem.'
+              },
+              date: {
+                type: 'string',
+                description: 'Date in YYYY-MM-DD format. Required when adding an exam or lab.'
+              },
+              content: {
+                type: 'string',
+                description: 'Text content. Required for notes and problem_notes edits. For action "append" this is appended. For action "update" this replaces the content.'
+              },
+              sets: { type: 'number', description: 'Number of sets. Only for physics/gym exercises.' },
+              reps: { type: 'number', description: 'Number of reps. Only for physics/gym exercises.' },
+              weight: { type: 'number', description: 'Weight in kg. Only for physics/gym exercises.' },
+              new_title: { type: 'string', description: 'New title when action is update.' },
+              new_date:  { type: 'string', description: 'New date (YYYY-MM-DD) when action is update.' },
+            },
+            required: ['action', 'section']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'web_search',
+          description: 'Search the web for current information. Use for health/rehab advice, learning resources, study tips, or any topic that benefits from up-to-date results.',
+          parameters: {
+            type: 'object',
+            properties: {
+              query: { type: 'string', description: 'Short focused search query (3-8 words).' }
+            },
+            required: ['query']
+          }
+        }
+      }
+    ];
+  },
+
+  async send(userMsg) {
+    const key = this.getKey();
+    if (!key) { this.showSetup(); return; }
+
+    const history = this.getHistory().slice(-10);
+    const context = this.buildContext(userMsg);
+
+    const messages = [
+      ...history.map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: `[App data — relevant sections only]\n${context}\n\n---\n${userMsg}` }
+    ];
+
+    const typingEl = this.addTyping();
+
+    try {
+      const proxyUrl   = this.getProxyUrl();
+      const proxyToken = this.getProxyToken();
+
+      const res = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Proxy-Token': proxyToken },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          max_tokens: 1000,
+          tools: this.tools(),
+          messages: [
+            { role: 'system', content: this.systemPrompt() },
+            ...messages
+          ]
+        })
+      });
+
+      typingEl.remove();
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          this.addMessage('assistant', '⚠️ Wrong proxy password or URL. Tap below to reconfigure.');
+          this.showSetup();
+        } else {
+          this.addMessage('assistant', `⚠️ Error ${res.status}: ${err.error?.message || res.statusText}`);
+        }
+        return;
+      }
+
+      const json         = await res.json();
+      const choice       = json.choices?.[0];
+      const finishReason = choice?.finish_reason;
+      const message      = choice?.message;
+
+      // ── Tool call response ──
+      if (finishReason === 'tool_calls' && message?.tool_calls?.length) {
+        const editCalls = message.tool_calls
+          .filter(tc => tc.function.name === 'edit_app_data')
+          .map(tc => JSON.parse(tc.function.arguments || '{}'));
+
+        if (editCalls.length > 0) {
+          this.showEditConfirmation(editCalls, userMsg);
+          return;
+        }
+
+        // web_search is handled server-side — shouldn't reach here
+        this.addMessage('assistant', '⚠️ Unexpected tool response. Please try again.');
+        return;
+      }
+
+      // ── Normal text response ──
+      const reply = message?.content || '(no response)';
+
+      const displayReply = reply;
+      await this.addMessageStreamed('assistant', displayReply);
+
+      const newHistory = [
+        ...this.getHistory(),
+        { role: 'user',      content: userMsg      },
+        { role: 'assistant', content: displayReply }
+      ];
+      this.setHistory(newHistory);
+
+    } catch(e) {
+      typingEl.remove();
+      this.addMessage('assistant', '⚠️ Could not reach the AI. Check your connection or proxy URL.');
+    }
+  },
+
+  // ── Build a human-readable summary of what the AI wants to do ──
+  describeEdit(args) {
+    const actionLabel = { add: 'Add', delete: 'Delete', update: 'Update', append: 'Append to' }[args.action] || args.action;
+    const sectionLabel = {
+      exams: 'Exams', labs: 'Labs', rehab: 'Rehab', motion: 'Motion Goals',
+      physics: 'Gym Exercises', business: 'Business Projects', cs: 'CS Projects',
+      problems: 'Problems', rules: 'Rules', notes: 'Notes', problem_notes: 'Problem Notes'
+    }[args.section] || args.section;
+    let detail = args.title || '';
+    if (args.date)      detail += ` — ${args.date}`;
+    if (args.sets)      detail += ` | ${args.sets}×${args.reps} @ ${args.weight}kg`;
+    if (args.new_title) detail += ` → rename to "${args.new_title}"`;
+    if (args.new_date)  detail += ` → new date ${args.new_date}`;
+    if (args.content)   detail += (detail ? ' | ' : '') + `"${args.content.slice(0, 60)}${args.content.length > 60 ? '…' : ''}"`;
+    return { actionLabel, sectionLabel, detail };
+  },
+
+  // ── Show a confirmation card in the chat ──
+  showEditConfirmation(argsArray, originalMsg) {
+    const msgs = document.getElementById('chat-messages');
+    const rows = argsArray.map(args => {
+      const { actionLabel, sectionLabel, detail } = this.describeEdit(args);
+      return `
+        <div class="confirm-action"><strong>${actionLabel}</strong> in <strong>${sectionLabel}</strong></div>
+        ${detail ? `<div class="confirm-detail">${detail}</div>` : ''}`;
+    }).join('<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">');
+
+    const card = document.createElement('div');
+    card.className = 'chat-msg assistant';
+    card.innerHTML = `
+      <div class="chat-bubble confirm-card">
+        <div class="confirm-header">✏️ Confirm ${argsArray.length > 1 ? argsArray.length + ' edits' : 'edit'}</div>
+        ${rows}
+        <div class="confirm-btns">
+          <button class="confirm-yes">Yes, do it</button>
+          <button class="confirm-no">Cancel</button>
+        </div>
+      </div>`;
+    msgs.appendChild(card);
+    msgs.scrollTop = msgs.scrollHeight;
+    card.querySelector('.confirm-yes').addEventListener('click', () => {
+      card.remove();
+      const results = argsArray.map(args => this.executeSingleEdit(args)).join('\n');
+      this.addMessage('assistant', results);
+      const newHistory = [...this.getHistory(),
+        { role: 'user', content: originalMsg },
+        { role: 'assistant', content: results }
+      ];
+      this.setHistory(newHistory);
+    });
+    card.querySelector('.confirm-no').addEventListener('click', () => {
+      card.remove();
+      this.addMessage('assistant', 'No problem — edit cancelled.');
+      const newHistory = [...this.getHistory(),
+        { role: 'user', content: originalMsg },
+        { role: 'assistant', content: 'Edit cancelled by user.' }
+      ];
+      this.setHistory(newHistory);
+    });
+  },
+
+  // ── Execute a single edit against localStorage — returns result string ──
+  executeSingleEdit(args) {
+    const { action, section } = args;
+    let resultMsg = '';
+    try {
+      if (section === 'notes') {
+        if (action === 'append') {
+          data.notes = (data.notes ? data.notes + '\n\n' : '') + (args.content || '');
+        } else {
+          data.notes = args.content || '';
+        }
+        save('notes');
+        notesTA.value = data.notes;
+        updateWordCount();
+        resultMsg = `Done — notes ${action === 'append' ? 'updated' : 'replaced'}.`;
+
+      } else if (section === 'problem_notes') {
+        const prob = data.problems.find(p =>
+          p.title.toLowerCase().includes((args.title || '').toLowerCase())
+        );
+        if (!prob) {
+          resultMsg = `Couldn't find a problem matching "${args.title}".`;
+        } else {
+          const existing = data.probNotes[prob.id] || '';
+          data.probNotes[prob.id] = action === 'append'
+            ? (existing ? existing + '\n\n' : '') + (args.content || '')
+            : (args.content || '');
+          save('probNotes');
+          if (currentProblemId === prob.id) probTA.value = data.probNotes[prob.id];
+          resultMsg = `Done — notes for **${prob.title}** ${action === 'append' ? 'updated' : 'replaced'}.`;
+        }
+
+      } else if (action === 'add') {
+        const item = { id: uid(), title: args.title || 'Untitled' };
+        if (args.date !== undefined)   item.date   = args.date;
+        if (args.sets !== undefined)   item.sets   = args.sets;
+        if (args.reps !== undefined)   item.reps   = args.reps;
+        if (args.weight !== undefined) item.weight = args.weight;
+        data[section].push(item);
+        save(section);
+        renderSection(section);
+        resultMsg = `Done — **${item.title}** added to ${section}.`;
+
+      } else if (action === 'delete') {
+        const before = data[section].length;
+        data[section] = data[section].filter(x =>
+          !x.title?.toLowerCase().includes((args.title || '').toLowerCase())
+        );
+        const removed = before - data[section].length;
+        save(section);
+        renderSection(section);
+        resultMsg = removed > 0
+          ? `Done — removed ${removed} item(s) matching "${args.title}" from ${section}.`
+          : `Couldn't find "${args.title}" in ${section} — nothing deleted.`;
+
+      } else if (action === 'update') {
+        const item = data[section].find(x =>
+          x.title?.toLowerCase().includes((args.title || '').toLowerCase())
+        );
+        if (item) {
+          if (args.new_title !== undefined) item.title  = args.new_title;
+          if (args.new_date !== undefined)  item.date   = args.new_date;
+          if (args.sets !== undefined)      item.sets   = args.sets;
+          if (args.reps !== undefined)      item.reps   = args.reps;
+          if (args.weight !== undefined)    item.weight = args.weight;
+          save(section);
+          renderSection(section);
+          resultMsg = `Done — **${args.title}** updated in ${section}.`;
+        } else {
+          resultMsg = `Couldn't find "${args.title}" in ${section} to update.`;
+        }
+      }
+    } catch(e) {
+      resultMsg = `Something went wrong: ${e.message}`;
+    }
+    return resultMsg;
+  },
+
+  addMessage(role, text) {
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `chat-msg ${role}`;
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Convert markdown-ish to HTML
+    const html = this.renderMarkdown(text);
+
+    div.innerHTML = `<div class="chat-bubble">${html}</div><span class="chat-time">${time}</span>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById('ai-chat-area').scrollTop = document.getElementById('ai-chat-area').scrollHeight;
+    return div;
+  },
+
+  // Reveals a full reply progressively so it feels like it's streaming in,
+  // even though it arrived from the proxy all at once. No network changes needed.
+  addMessageStreamed(role, text) {
+    const msgs = document.getElementById('chat-messages');
+    const chatArea = document.getElementById('ai-chat-area');
+    const div = document.createElement('div');
+    div.className = `chat-msg ${role}`;
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    div.innerHTML = `<div class="chat-bubble"></div><span class="chat-time">${time}</span>`;
+    msgs.appendChild(div);
+    const bubble = div.querySelector('.chat-bubble');
+
+    return new Promise(resolve => {
+      const CHUNK = 3;       // characters revealed per tick
+      const DELAY = 12;      // ms between ticks
+      let i = 0;
+      const tick = () => {
+        i = Math.min(i + CHUNK, text.length);
+        bubble.innerHTML = this.renderMarkdown(text.slice(0, i));
+        msgs.scrollTop = msgs.scrollHeight;
+        chatArea.scrollTop = chatArea.scrollHeight;
+        if (i < text.length) {
+          setTimeout(tick, DELAY);
+        } else {
+          resolve(div);
+        }
+      };
+      tick();
+    });
+  },
+
+  renderMarkdown(text) {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/### (.+)/g, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^- (.+)/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+      .replace(/---/g, '<hr>')
+      .replace(/\n/g, '<br>');
+  },
+
+  addTyping() {
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg assistant';
+    div.innerHTML = `<div class="chat-typing"><span></span><span></span><span></span></div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  },
+
+  showSetup() {
+    document.getElementById('ai-setup').style.display = 'block';
+  },
+
+  hideSetup() {
+    document.getElementById('ai-setup').style.display = 'none';
+  },
+
+  init() {
+    const key = this.getKey();
+    if (!key) {
+      this.showSetup();
+    } else {
+      this.hideSetup();
+      // Show welcome if no history
+      const history = this.getHistory();
+      if (history.length === 0) {
+        this.send('Hello! Give me a quick overview of my day.');
+      } else {
+        // Replay last few messages
+        history.slice(-6).forEach(m => this.addMessage(m.role, m.content));
+      }
+    }
+
+    // Save button
+    document.getElementById('save-api-key').addEventListener('click', () => {
+      const url = document.getElementById('proxy-url-input').value.trim();
+      const token = document.getElementById('proxy-token-input').value.trim();
+      if (!url) { alert('Please enter your proxy URL'); return; }
+      this.setProxyUrl(url);
+      this.setProxyToken(token);
+      this.setKey('proxy');
+      this.hideSetup();
+      this.send('Hello! Give me a quick overview of my day.');
+    });
+
+    // Send button
+    document.getElementById('ai-send-btn').addEventListener('click', () => this.handleSend());
+
+    // Enter to send (shift+enter for newline)
+    document.getElementById('ai-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.handleSend();
+      }
+    });
+
+    // Auto-resize textarea
+    document.getElementById('ai-input').addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+
+    // Clear button
+    document.getElementById('ai-clear-btn').addEventListener('click', () => {
+      if (confirm('Clear chat history?')) {
+        this.setHistory([]);
+        document.getElementById('chat-messages').innerHTML = '';
+        this.send('Hello! Give me a fresh overview of my day.');
+      }
+    });
+
+    // AI Instructions panel — save, reset, close (opening is triggered by the header pen icon)
+    document.getElementById('ai-instructions-save').addEventListener('click', () => {
+      const text = document.getElementById('ai-instructions-textarea').value;
+      if (text.trim() && text.trim() !== this.defaultPersonalPrompt().trim()) {
+        this.setCustomPrompt(text);
+      } else {
+        this.clearCustomPrompt();
+      }
+      this.closeInstructionsPanel();
+    });
+
+    document.getElementById('ai-instructions-reset').addEventListener('click', () => {
+      this.clearCustomPrompt();
+      document.getElementById('ai-instructions-textarea').value = this.defaultPersonalPrompt();
+    });
+
+    document.getElementById('ai-instructions-close').addEventListener('click', () => this.closeInstructionsPanel());
+
+  },
+
+  openInstructionsPanel() {
+    const current = this.getCustomPrompt();
+    document.getElementById('ai-instructions-textarea').value = current || this.defaultPersonalPrompt();
+    document.getElementById('ai-instructions-panel').style.display = 'block';
+    document.getElementById('ai-chat-area').style.display = 'none';
+    document.getElementById('ai-input-bar').style.display = 'none';
+  },
+
+  closeInstructionsPanel() {
+    document.getElementById('ai-instructions-panel').style.display = 'none';
+    document.getElementById('ai-chat-area').style.display = '';
+    document.getElementById('ai-input-bar').style.display = '';
+  },
+
+  handleSend() {
+    const input = document.getElementById('ai-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('ai-send-btn').disabled = true;
+    this.addMessage('user', msg);
+    this.send(msg).finally(() => {
+      document.getElementById('ai-send-btn').disabled = false;
+    });
+  }
+};
+
+// Init AI when tab is first opened
+let aiInitialized = false;
+const _origSwitchTab = switchTab;
+// Patch switchTab to init AI on first visit
+const origSwitchTab = switchTab;
+document.querySelectorAll('.nav-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.dataset.tab === 'ai' && !aiInitialized) {
+      aiInitialized = true;
+      setTimeout(() => AI.init(), 100);
+    }
+  });
+});
+</script>
+
+<!--
+  ┌──────────────────────────────────────────────────┐
+  │  LIFE MANAGER — How to run                       │
+  │                                                  │
+  │  1. Open this HTML file in any modern browser.   │
+  │  2. All data is saved in localStorage — no       │
+  │     server or setup required.                    │
+  │  3. Works best on mobile (up to 430px wide)      │
+  │     or in a browser's mobile device mode.        │
+  │                                                  │
+  │  Tip: Add to Home Screen on iOS/Android for     │
+  │       a native app-like experience.              │
+  └──────────────────────────────────────────────────┘
+-->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
