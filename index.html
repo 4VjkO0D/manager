@@ -1432,13 +1432,18 @@ function openProblemEditor(id) {
   probTA.value = data.probNotes[id] || '';
   autosaveEl.textContent = '';
   problemEditor.classList.add('open');
+  // Push a history entry so Android back-swipe closes the editor
+  history.pushState({ app: 'life-manager', editor: true }, '', location.href);
   setTimeout(() => probTA.focus(), 300);
 }
 
-function closeProblemEditor() {
+function closeProblemEditor(fromPopstate) {
   problemEditor.classList.remove('open');
   currentProblemId = null;
   renderProblems();
+  if (!fromPopstate && history.state && history.state.editor) {
+    history.back();
+  }
 }
 
 // Auto-save problem notes
@@ -1518,6 +1523,58 @@ setInterval(() => { if (currentTab === 'school') renderExams(); }, 60000);
 
 // ── Init ──
 renderAll();
+
+// ── Android back-gesture / History API ──
+// Push an initial history entry so there's always something to pop
+// before the app would exit. On Android, the edge-swipe triggers
+// popstate — we intercept it to close overlays/modals instead.
+history.pushState({ app: 'life-manager', tab: currentTab }, '', location.href);
+
+window.addEventListener('popstate', (e) => {
+  const state = e.state;
+  if (!state) return;
+
+  // If the problem editor is open, close it instead of navigating away
+  if (state.editor) {
+    closeProblemEditor(true);
+    return;
+  }
+
+  // If the modal is open, close it instead of navigating away
+  if (state.modal) {
+    closeModal(true);
+    return;
+  }
+
+  // If the instructions panel is open, close it
+  if (state.instructions) {
+    AI.closeInstructionsPanel();
+    return;
+  }
+
+  // If we're at the init state and a different tab was active,
+  // switch back to it (don't exit the app)
+  if (state.app === 'life-manager' && state.tab && state.tab !== currentTab) {
+    switchTab(state.tab);
+    return;
+  }
+
+  // If we're at the init state and still on the same tab, push a new
+  // state to keep the user from exiting. Only allow a real exit if
+  // they press back twice quickly.
+  if (state.app === 'life-manager') {
+    const now = Date.now();
+    if (this._lastBackPress && now - this._lastBackPress < 800) {
+      // Double back — let the browser go back (exit the app)
+      history.go(-1);
+      return;
+    }
+    this._lastBackPress = now;
+    // Push a fresh state so the next swipe doesn't exit immediately
+    history.pushState({ app: 'life-manager', tab: currentTab, _ts: now }, '', location.href);
+    return;
+  }
+});
 
 /* =====================================================
    AI ASSISTANT
