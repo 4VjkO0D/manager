@@ -46,8 +46,8 @@
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     font-size: 15px;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
     overscroll-behavior-x: none;
-    overflow-x: hidden;
   }
 
   #app {
@@ -523,23 +523,13 @@
   .chat-msg.assistant { align-items: flex-start; }
 
   .chat-bubble {
-    max-width: 100%;
+    max-width: 85%;
     padding: 10px 14px;
     border-radius: 18px;
     font-size: 14px;
     line-height: 1.55;
     white-space: pre-wrap;
     word-break: break-word;
-    overflow-wrap: break-word;
-    overflow-x: auto;
-  }
-
-  .chat-msg.user .chat-bubble {
-    max-width: 85%;
-  }
-
-  .chat-msg.assistant .chat-bubble {
-    max-width: 100%;
   }
 
   .chat-msg.user .chat-bubble {
@@ -662,6 +652,7 @@
     border: 1px solid var(--accent) !important;
     border-radius: 14px !important;
     padding: 14px 16px !important;
+    max-width: none !important;
   }
   .confirm-header {
     font-size: 11px; font-weight: 700;
@@ -674,6 +665,10 @@
     margin-bottom: 12px; margin-top: 4px;
     font-family: monospace; background: var(--bg);
     padding: 6px 10px; border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
   .confirm-btns { display: flex; gap: 8px; margin-top: 12px; }
   .confirm-yes {
@@ -1771,7 +1766,7 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
         headers: { 'Content-Type': 'application/json', 'X-Proxy-Token': proxyToken },
         body: JSON.stringify({
           model: 'deepseek-chat',
-          max_tokens: 1000,
+          max_tokens: 4000,
           tools: this.tools(),
           messages: [
             { role: 'system', content: this.systemPrompt() },
@@ -1846,7 +1841,7 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
     if (args.sets)      detail += ` | ${args.sets}Ã—${args.reps} @ ${args.weight}kg`;
     if (args.new_title) detail += ` â†’ rename to "${args.new_title}"`;
     if (args.new_date)  detail += ` â†’ new date ${args.new_date}`;
-    if (args.content)   detail += (detail ? ' | ' : '') + `"${args.content.slice(0, 60)}${args.content.length > 60 ? 'â€¦' : ''}"`;
+    if (args.content)   detail += (detail ? ' | ' : '') + `"${args.content}"`;
     return { actionLabel, sectionLabel, detail };
   },
 
@@ -1974,7 +1969,6 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
 
   addMessage(role, text) {
     const msgs = document.getElementById('chat-messages');
-    const chatArea = document.getElementById('ai-chat-area');
     const div = document.createElement('div');
     div.className = `chat-msg ${role}`;
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1984,16 +1978,19 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
 
     div.innerHTML = `<div class="chat-bubble">${html}</div><span class="chat-time">${time}</span>`;
     msgs.appendChild(div);
-    // Only auto-scroll if user is near the bottom
-    if (chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight < 80) {
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
+    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById('ai-chat-area').scrollTop = document.getElementById('ai-chat-area').scrollHeight;
     return div;
   },
 
   // Reveals a full reply progressively so it feels like it's streaming in,
   // even though it arrived from the proxy all at once. No network changes needed.
-  // Only auto-scrolls if the user is already near the bottom â€” allows free scrolling up.
+  // Check if the user is near the bottom of the chat area â€” only auto-scroll
+  // during streaming when they haven't scrolled up to read earlier content.
+  _isNearBottom(el) {
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+  },
+
   addMessageStreamed(role, text) {
     const msgs = document.getElementById('chat-messages');
     const chatArea = document.getElementById('ai-chat-area');
@@ -2004,10 +2001,6 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
     msgs.appendChild(div);
     const bubble = div.querySelector('.chat-bubble');
 
-    function isNearBottom(el) {
-      return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-    }
-
     return new Promise(resolve => {
       const CHUNK = 3;       // characters revealed per tick
       const DELAY = 12;      // ms between ticks
@@ -2015,17 +2008,17 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
       const tick = () => {
         i = Math.min(i + CHUNK, text.length);
         bubble.innerHTML = this.renderMarkdown(text.slice(0, i));
-        // Only auto-scroll if user is close to the bottom
-        if (isNearBottom(chatArea)) {
+        // Only auto-scroll if user is near the bottom â€” don't yank them
+        // away from earlier messages they're trying to read.
+        if (this._isNearBottom(msgs)) {
+          msgs.scrollTop = msgs.scrollHeight;
+        }
+        if (this._isNearBottom(chatArea)) {
           chatArea.scrollTop = chatArea.scrollHeight;
         }
         if (i < text.length) {
           setTimeout(tick, DELAY);
         } else {
-          // Do a final scroll-to-bottom only if near bottom (handles case where scroll was locked)
-          if (isNearBottom(chatArea)) {
-            chatArea.scrollTop = chatArea.scrollHeight;
-          }
           resolve(div);
         }
       };
