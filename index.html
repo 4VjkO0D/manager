@@ -1432,18 +1432,13 @@ function openProblemEditor(id) {
   probTA.value = data.probNotes[id] || '';
   autosaveEl.textContent = '';
   problemEditor.classList.add('open');
-  // Push a history entry so Android back-swipe closes the editor
-  history.pushState({ app: 'life-manager', editor: true }, '', location.href);
   setTimeout(() => probTA.focus(), 300);
 }
 
-function closeProblemEditor(fromPopstate) {
+function closeProblemEditor() {
   problemEditor.classList.remove('open');
   currentProblemId = null;
   renderProblems();
-  if (!fromPopstate && history.state && history.state.editor) {
-    history.back();
-  }
 }
 
 // Auto-save problem notes
@@ -1525,55 +1520,59 @@ setInterval(() => { if (currentTab === 'school') renderExams(); }, 60000);
 renderAll();
 
 // ── Android back-gesture / History API ──
-// Push an initial history entry so there's always something to pop
-// before the app would exit. On Android, the edge-swipe triggers
-// popstate — we intercept it to close overlays/modals instead.
-history.pushState({ app: 'life-manager', tab: currentTab }, '', location.href);
+// On Android, the edge-swipe back gesture triggers a popstate event.
+// We push a dummy history entry so the swipe "goes back" to our entry
+// instead of exiting the app. When an overlay (problem editor, modal)
+// opens, we push another entry — the first swipe closes the overlay,
+// the second swipe is absorbed and replaced.
+let _backGuard = 0;
+
+function pushBackGuard(tag) {
+  _backGuard++;
+  history.pushState({ guard: _backGuard, tag: tag || '' }, '', location.href);
+}
+
+// Seed the guard (app start)
+pushBackGuard('base');
+let _lastBackTime = 0;
 
 window.addEventListener('popstate', (e) => {
-  const state = e.state;
-  if (!state) return;
-
-  // If the problem editor is open, close it instead of navigating away
-  if (state.editor) {
-    closeProblemEditor(true);
+  // Priority 1: if problem editor is open, close it
+  if (problemEditor.classList.contains('open')) {
+    closeProblemEditor();
+    _lastBackTime = 0;
+    pushBackGuard('base');
     return;
   }
 
-  // If the modal is open, close it instead of navigating away
-  if (state.modal) {
-    closeModal(true);
+  // Priority 2: if add modal is open, close it
+  if (modalOverlay.classList.contains('open')) {
+    closeModal();
+    _lastBackTime = 0;
+    pushBackGuard('base');
     return;
   }
 
-  // If the instructions panel is open, close it
-  if (state.instructions) {
+  // Priority 3: if instructions panel is open, close it
+  const instrPanel = document.getElementById('ai-instructions-panel');
+  if (instrPanel && instrPanel.style.display === 'block') {
     AI.closeInstructionsPanel();
+    _lastBackTime = 0;
+    pushBackGuard('base');
     return;
   }
 
-  // If we're at the init state and a different tab was active,
-  // switch back to it (don't exit the app)
-  if (state.app === 'life-manager' && state.tab && state.tab !== currentTab) {
-    switchTab(state.tab);
+  // Nothing to close — double-swipe within 800ms to actually exit
+  const now = Date.now();
+  if (_lastBackTime && (now - _lastBackTime) < 800) {
+    // Second swipe — let the browser go back (exit the app)
+    _lastBackTime = 0;
+    history.go(-1);
     return;
   }
-
-  // If we're at the init state and still on the same tab, push a new
-  // state to keep the user from exiting. Only allow a real exit if
-  // they press back twice quickly.
-  if (state.app === 'life-manager') {
-    const now = Date.now();
-    if (this._lastBackPress && now - this._lastBackPress < 800) {
-      // Double back — let the browser go back (exit the app)
-      history.go(-1);
-      return;
-    }
-    this._lastBackPress = now;
-    // Push a fresh state so the next swipe doesn't exit immediately
-    history.pushState({ app: 'life-manager', tab: currentTab, _ts: now }, '', location.href);
-    return;
-  }
+  _lastBackTime = now;
+  // Absorb the first swipe and push a fresh guard
+  pushBackGuard('base');
 });
 
 /* =====================================================
