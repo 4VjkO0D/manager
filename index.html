@@ -46,6 +46,8 @@
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     font-size: 15px;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior-x: none;
+    overflow-x: hidden;
   }
 
   #app {
@@ -57,6 +59,8 @@
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    overscroll-behavior-x: none;
+    touch-action: pan-y;
   }
 
   /* â”€â”€ Header â”€â”€ */
@@ -519,13 +523,23 @@
   .chat-msg.assistant { align-items: flex-start; }
 
   .chat-bubble {
-    max-width: 85%;
+    max-width: 100%;
     padding: 10px 14px;
     border-radius: 18px;
     font-size: 14px;
     line-height: 1.55;
     white-space: pre-wrap;
     word-break: break-word;
+    overflow-wrap: break-word;
+    overflow-x: auto;
+  }
+
+  .chat-msg.user .chat-bubble {
+    max-width: 85%;
+  }
+
+  .chat-msg.assistant .chat-bubble {
+    max-width: 100%;
   }
 
   .chat-msg.user .chat-bubble {
@@ -1960,6 +1974,7 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
 
   addMessage(role, text) {
     const msgs = document.getElementById('chat-messages');
+    const chatArea = document.getElementById('ai-chat-area');
     const div = document.createElement('div');
     div.className = `chat-msg ${role}`;
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1969,13 +1984,16 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
 
     div.innerHTML = `<div class="chat-bubble">${html}</div><span class="chat-time">${time}</span>`;
     msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-    document.getElementById('ai-chat-area').scrollTop = document.getElementById('ai-chat-area').scrollHeight;
+    // Only auto-scroll if user is near the bottom
+    if (chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight < 80) {
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
     return div;
   },
 
   // Reveals a full reply progressively so it feels like it's streaming in,
   // even though it arrived from the proxy all at once. No network changes needed.
+  // Only auto-scrolls if the user is already near the bottom â€” allows free scrolling up.
   addMessageStreamed(role, text) {
     const msgs = document.getElementById('chat-messages');
     const chatArea = document.getElementById('ai-chat-area');
@@ -1986,6 +2004,10 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
     msgs.appendChild(div);
     const bubble = div.querySelector('.chat-bubble');
 
+    function isNearBottom(el) {
+      return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    }
+
     return new Promise(resolve => {
       const CHUNK = 3;       // characters revealed per tick
       const DELAY = 12;      // ms between ticks
@@ -1993,11 +2015,17 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" â€
       const tick = () => {
         i = Math.min(i + CHUNK, text.length);
         bubble.innerHTML = this.renderMarkdown(text.slice(0, i));
-        msgs.scrollTop = msgs.scrollHeight;
-        chatArea.scrollTop = chatArea.scrollHeight;
+        // Only auto-scroll if user is close to the bottom
+        if (isNearBottom(chatArea)) {
+          chatArea.scrollTop = chatArea.scrollHeight;
+        }
         if (i < text.length) {
           setTimeout(tick, DELAY);
         } else {
+          // Do a final scroll-to-bottom only if near bottom (handles case where scroll was locked)
+          if (isNearBottom(chatArea)) {
+            chatArea.scrollTop = chatArea.scrollHeight;
+          }
           resolve(div);
         }
       };
