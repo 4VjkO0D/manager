@@ -475,6 +475,141 @@
   }
   #modal-confirm:hover { opacity: 0.85; }
 
+  /* ── Activity Tracker (Health tab) ── */
+  .history-btn {
+    width: 30px; height: 30px;
+    background: rgba(108,99,255,0.15);
+    color: var(--accent2);
+    border: none; border-radius: 50%;
+    font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition);
+    flex-shrink: 0;
+  }
+  .history-btn:hover { background: rgba(108,99,255,0.3); color: var(--accent2); }
+
+  #activity-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 300;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #activity-modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  #activity-modal-box {
+    width: 100%; max-width: 430px;
+    background: var(--surface);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 18px 18px 32px;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+    max-height: 82vh;
+    display: flex; flex-direction: column;
+  }
+  #activity-modal-overlay.open #activity-modal-box { transform: translateY(0); }
+
+  #activity-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 10px;
+  }
+  #activity-modal-title {
+    font-size: 16px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #activity-modal-close {
+    width: 32px; height: 32px;
+    border: none; border-radius: 50%;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--transition), color var(--transition);
+  }
+  #activity-modal-close:hover { background: var(--border); color: var(--text); }
+
+  .activity-add-bar {
+    display: flex; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .activity-add-bar input[type="date"] {
+    flex: 1; min-width: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text); font-size: 14px;
+    padding: 9px 12px; outline: none;
+    font-family: inherit;
+    transition: border-color var(--transition);
+  }
+  .activity-add-bar input[type="date"]:focus { border-color: var(--accent); }
+  .activity-add-btn {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    padding: 9px 14px; font-size: 13px; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+    transition: opacity var(--transition);
+  }
+  .activity-add-btn:hover { opacity: 0.85; }
+
+  #activity-modal-body {
+    flex: 1; min-height: 0;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+  }
+
+  .activity-history-row {
+    display: flex; align-items: center;
+    padding: 11px 4px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .activity-history-row:last-child { border-bottom: none; }
+  .activity-history-info { flex: 1; min-width: 0; }
+  .activity-history-date { font-size: 14px; font-weight: 500; }
+  .activity-history-rel { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .activity-history-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .history-edit-btn, .history-del-btn {
+    width: 30px; height: 30px;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition);
+  }
+  .history-edit-btn { background: var(--surface2); color: var(--text-muted); }
+  .history-edit-btn:hover { background: var(--border); color: var(--text); }
+  .history-del-btn { background: rgba(248,113,113,0.1); color: var(--red); }
+  .history-del-btn:hover { background: rgba(248,113,113,0.25); }
+
+  .activity-date-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    color: var(--text); font-size: 14px;
+    padding: 7px 10px; outline: none;
+    font-family: inherit;
+  }
+  .activity-edit-btns { display: flex; gap: 6px; margin-top: 7px; }
+  .history-save-btn {
+    flex: 1; padding: 7px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: opacity var(--transition);
+  }
+  .history-save-btn:hover { opacity: 0.85; }
+  .history-cancel-btn {
+    flex: 1; padding: 7px;
+    background: var(--surface2); color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: background var(--transition);
+  }
+  .history-cancel-btn:hover { background: var(--border); color: var(--text); }
+
   /* ── Scrollbar ── */
   #content::-webkit-scrollbar { width: 3px; }
   #content::-webkit-scrollbar-track { background: transparent; }
@@ -721,6 +856,14 @@
       </div>
     </div>
     <div id="tab-health" class="tab-panel">
+      <!-- Activity Tracker -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Activity Tracker</span>
+          <button class="add-btn" data-action="add-activity"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-activities"></div>
+      </div>
       <!-- Rehab -->
       <div class="section-card">
         <div class="section-header">
@@ -857,6 +1000,21 @@
     </div>
   </div>
 
+  <!-- Activity history modal -->
+  <div id="activity-modal-overlay">
+    <div id="activity-modal-box">
+      <div id="activity-modal-header">
+        <span id="activity-modal-title"></span>
+        <button id="activity-modal-close" title="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="activity-add-bar">
+        <input type="date" id="activity-new-date">
+        <button class="activity-add-btn" id="activity-add-entry">Add</button>
+      </div>
+      <div id="activity-modal-body"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -877,6 +1035,7 @@ const TODAY = () => new Date().toISOString().slice(0, 10);
 const DEFAULTS = {
   exams:    [],
   labs:     [],
+  activities: [],
   rehab:    ['Shoulder stretch', 'Knee flexion', 'Ankle circles'].map(t => ({ id: uid(), title: t })),
   motion:   ['Walk 10,000 steps', 'Stretch 15min', 'Stand 2hrs'].map(t => ({ id: uid(), title: t })),
   physics:  [],
@@ -904,9 +1063,42 @@ const data = {
   checks:   LS.get('lm_checks',   {}),  // { date: { rehab: {id:bool}, motion: {id:bool} } }
   physLogs: LS.get('lm_physlogs', {}),  // { exerciseId: [{date, sets, reps, weight}] }
   probNotes: LS.get('lm_probNotes', LS.get('lm_probnotes', {})), // { problemId: text }
+  activities: LS.get('lm_activities', DEFAULTS.activities),
+  activityLogs: LS.get('lm_activitylogs', {}), // { activityId: [{id, date}] }
 };
 
 function save(key) { LS.set('lm_' + key, data[key]); }
+
+// ── Activity Tracker ──
+function getActivityLogs(id) {
+  if (!data.activityLogs[id]) data.activityLogs[id] = [];
+  return data.activityLogs[id];
+}
+function daysAgo(dateStr) {
+  const now  = new Date(); now.setHours(0,0,0,0);
+  const then = new Date(dateStr + 'T00:00:00');
+  return Math.round((now - then) / 86400000);
+}
+function relDateLabel(dateStr) {
+  const d = daysAgo(dateStr);
+  if (d <= 0)  return 'Today';
+  if (d === 1) return 'Yesterday';
+  if (d === 7) return '1 week ago';
+  return d + ' days ago';
+}
+function activityBadge(act) {
+  const logs = getActivityLogs(act.id);
+  if (!logs.length) return '<span class="countdown" style="background:var(--surface2);color:var(--text-muted)">No logs</span>';
+  const latest = [...logs].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+  const d = daysAgo(latest.date);
+  if (d <= 0)  return '<span class="countdown green">Today</span>';
+  if (d === 1) return '<span class="countdown green">1 day ago</span>';
+  if (d <= 7)  return `<span class="countdown green">${d} days ago</span>`;
+  if (d <= 30) return `<span class="countdown amber">${d} days ago</span>`;
+  return `<span class="countdown red">${d} days ago</span>`;
+}
+
+// ── DOM references ──
 
 // ── Daily check auto-reset ──
 function getTodayChecks(section) {
@@ -957,6 +1149,13 @@ const probTA        = document.getElementById('problem-textarea');
 const autosaveEl    = document.getElementById('autosave-indicator');
 const notesTA       = document.getElementById('notes-textarea');
 const wordCountEl   = document.getElementById('word-count');
+const activityModalOverlay = document.getElementById('activity-modal-overlay');
+const activityModalTitle   = document.getElementById('activity-modal-title');
+const activityModalBody    = document.getElementById('activity-modal-body');
+const activityNewDate      = document.getElementById('activity-new-date');
+const activityAddEntryBtn  = document.getElementById('activity-add-entry');
+const activityModalClose   = document.getElementById('activity-modal-close');
+let currentActivityId = null;
 
 let currentTab = 'school';
 let editMode   = false;
@@ -1169,10 +1368,121 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* Activity Tracker list */
+function renderActivities() {
+  const listEl = document.getElementById('list-activities');
+  listEl.innerHTML = '';
+  if (!data.activities.length) { listEl.innerHTML = emptyState('No activities tracked'); return; }
+  sortPinned('activities', data.activities).forEach(act => {
+    const pinned = isPinned('activities', act.id);
+    const div = document.createElement('div');
+    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
+    div.dataset.id = act.id;
+    div.dataset.section = 'activities';
+    const logs = getActivityLogs(act.id);
+    div.innerHTML = `
+      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+      ${pinBtn('activities', act.id)}
+      <div class="item-main">
+        <span class="item-title">${escHtml(act.title)}</span>
+        <div class="item-sub">${logs.length} ${logs.length === 1 ? 'entry' : 'entries'}</div>
+      </div>
+      ${activityBadge(act)}
+      <button class="history-btn" data-action="open-activity" data-id="${act.id}" title="View history"><i class="fa-solid fa-clock-rotate-left"></i></button>
+      <button class="delete-btn" data-action="delete" data-section="activities" data-id="${act.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, 'activities');
+}
+
+/* ── Activity history modal ── */
+function openActivityModal(id) {
+  const act = data.activities.find(a => a.id === id);
+  if (!act) return;
+  currentActivityId = id;
+  activityModalTitle.textContent = act.title;
+  activityNewDate.value = TODAY();
+  renderActivityModal();
+  activityModalOverlay.classList.add('open');
+}
+function closeActivityModal() {
+  activityModalOverlay.classList.remove('open');
+  currentActivityId = null;
+}
+function renderActivityModal() {
+  if (!currentActivityId) return;
+  const logs = getActivityLogs(currentActivityId);
+  const sorted = [...logs].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  activityModalBody.innerHTML = '';
+  if (!sorted.length) {
+    activityModalBody.innerHTML = '<div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i>No history yet — add an entry above.</div>';
+    activityNewDate.value = TODAY();
+    return;
+  }
+  sorted.forEach((log, i) => {
+    const row = document.createElement('div');
+    row.className = 'activity-history-row fade-in';
+    row.dataset.logId = log.id;
+    row.innerHTML = `
+      <div class="activity-history-info">
+        <div class="activity-history-date">${log.date}</div>
+        <div class="activity-history-rel">${relDateLabel(log.date)}</div>
+      </div>
+      <div class="activity-history-actions">
+        <button class="history-edit-btn" data-action="edit-log" data-id="${log.id}" title="Edit date"><i class="fa-solid fa-pen"></i></button>
+        <button class="history-del-btn" data-action="del-log" data-id="${log.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+      </div>`;
+    activityModalBody.appendChild(row);
+  });
+  // If the sorted first entry date differs from today, keep the date input at today
+  activityNewDate.value = TODAY();
+}
+function addActivityEntry() {
+  if (!currentActivityId) return;
+  const date = activityNewDate.value;
+  if (!date) return;
+  getActivityLogs(currentActivityId).push({ id: uid(), date: date });
+  save('activityLogs');
+  renderActivityModal();
+  renderActivities();
+}
+function startEditLog(logId) {
+  const row = activityModalBody.querySelector(`[data-log-id="${logId}"]`);
+  if (!row) return;
+  const log = getActivityLogs(currentActivityId).find(l => l.id === logId);
+  if (!log) return;
+  row.innerHTML = `
+    <div style="flex:1;min-width:0;">
+      <input type="date" class="activity-date-input" id="edit-log-date-${logId}" value="${log.date}">
+      <div class="activity-edit-btns">
+        <button class="history-save-btn" data-action="save-log" data-id="${logId}">Save</button>
+        <button class="history-cancel-btn" data-action="cancel-edit-log">Cancel</button>
+      </div>
+    </div>`;
+}
+function saveLog(logId) {
+  const inp = document.getElementById('edit-log-date-' + logId);
+  if (!inp || !inp.value) return;
+  const log = getActivityLogs(currentActivityId).find(l => l.id === logId);
+  if (!log) return;
+  log.date = inp.value;
+  save('activityLogs');
+  renderActivityModal();
+  renderActivities();
+}
+function deleteActivityLog(logId) {
+  const logs = getActivityLogs(currentActivityId);
+  data.activityLogs[currentActivityId] = logs.filter(l => l.id !== logId);
+  save('activityLogs');
+  renderActivityModal();
+  renderActivities();
+}
+
 /* Render all */
 function renderAll() {
   renderExams();
   renderLabs();
+  renderActivities();
   renderChecklist('rehab');
   renderChecklist('motion');
   renderPhysics();
@@ -1309,6 +1619,7 @@ function renderSection(section) {
   switch (section) {
     case 'exams':    renderExams(); break;
     case 'labs':     renderLabs(); break;
+    case 'activities': renderActivities(); break;
     case 'rehab':    renderChecklist('rehab'); break;
     case 'motion':   renderChecklist('motion'); break;
     case 'physics':  renderPhysics(); break;
@@ -1461,6 +1772,15 @@ notesTA.addEventListener('input', () => {
   notesTA._t = setTimeout(() => { data.notes = notesTA.value; save('notes'); }, 500);
 });
 
+// ── Add activity ──
+function addActivity() {
+  const title = prompt('Activity name:', '');
+  if (!title || !title.trim()) return;
+  data.activities.push({ id: uid(), title: title.trim() });
+  save('activities');
+  renderActivities();
+}
+
 // ── Event delegation (content area) ──
 document.getElementById('content').addEventListener('click', e => {
   const btn = e.target.closest('[data-action]');
@@ -1470,13 +1790,31 @@ document.getElementById('content').addEventListener('click', e => {
   const id      = btn.dataset.id;
 
   if (action === 'add')    { openModal(section); return; }
+  if (action === 'add-activity') { addActivity(); return; }
   if (action === 'delete') { deleteItem(section, id); return; }
   if (action === 'pin')    { togglePin(section, id); return; }
   if (action === 'up')     { moveItem(section, id, 'up'); return; }
   if (action === 'down')   { moveItem(section, id, 'down'); return; }
   if (action === 'log')    { logExercise(id); return; }
   if (action === 'open-problem') { openProblemEditor(id); return; }
+  if (action === 'open-activity') { openActivityModal(id); return; }
 });
+
+// ── Activity modal event delegation ──
+activityModalBody.addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn || !currentActivityId) return;
+  const action = btn.dataset.action;
+  const logId  = btn.dataset.id;
+
+  if (action === 'edit-log')      { startEditLog(logId); return; }
+  if (action === 'save-log')      { saveLog(logId); return; }
+  if (action === 'del-log')       { deleteActivityLog(logId); return; }
+  if (action === 'cancel-edit-log') { renderActivityModal(); return; }
+});
+activityAddEntryBtn.addEventListener('click', addActivityEntry);
+activityModalClose.addEventListener('click', closeActivityModal);
+activityModalOverlay.addEventListener('click', e => { if (e.target === activityModalOverlay) closeActivityModal(); });
 
 // Checkbox change delegation
 document.getElementById('content').addEventListener('change', e => {
@@ -1537,6 +1875,14 @@ pushBackGuard('base');
 let _lastBackTime = 0;
 
 window.addEventListener('popstate', (e) => {
+  // Priority 0: if activity history modal is open, close it
+  if (activityModalOverlay.classList.contains('open')) {
+    closeActivityModal();
+    _lastBackTime = 0;
+    pushBackGuard('base');
+    return;
+  }
+
   // Priority 1: if problem editor is open, close it
   if (problemEditor.classList.contains('open')) {
     closeProblemEditor();
@@ -1678,9 +2024,15 @@ const AI = {
         const todayLog = logs.find(l => l.date === today);
         return `${ex.title} (${ex.sets}×${ex.reps} @ ${ex.weight}kg)${todayLog ? ' ✓ logged today' : ''}`;
       });
+      const actLines = data.activities.map(a => {
+        const logs = data.activityLogs[a.id] || [];
+        const latest = [...logs].sort((x, y) => (y.date || '').localeCompare(x.date || ''))[0];
+        return `${a.title}: ${latest ? latest.date + ' (' + relDateLabel(latest.date) + ')' : 'never'}`;
+      });
       parts.push(`REHAB EXERCISES:\n- Done: ${rehabDone.join(', ') || 'none'}\n- Todo: ${rehabTodo.join(', ') || 'all done!'}`);
       parts.push(`MOTION GOALS:\n- Done: ${motionDone.join(', ') || 'none'}\n- Todo: ${motionTodo.join(', ') || 'all done!'}`);
       parts.push(`GYM EXERCISES:\n${physLogs.length ? physLogs.join('\n') : 'None set up'}`);
+      parts.push(`ACTIVITY TRACKER:\n${actLines.length ? actLines.join('\n') : 'None set up'}`);
     }
 
     if (include.projects) {
