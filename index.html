@@ -779,6 +779,65 @@
   }
   #ai-clear-btn:hover { background: var(--border); color: var(--text); }
 
+  #ai-access-btn {
+    width: 34px; height: 34px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: none; border-radius: 50%;
+    font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--transition), color var(--transition);
+  }
+  #ai-access-btn:hover { background: var(--border); color: var(--text); }
+  #ai-access-btn.active { background: var(--accent); color: #fff; }
+
+  /* ── AI access toggles ── */
+  .access-option {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .access-option:last-child { border-bottom: none; }
+  .access-option-label {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 500;
+  }
+  .access-option-label > i { color: var(--text-muted); width: 20px; text-align: center; flex-shrink: 0; }
+  .access-option-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 400; }
+
+  .toggle {
+    position: relative;
+    width: 46px; height: 26px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .slider {
+    position: absolute; inset: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 26px;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+  }
+  .toggle .slider::before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; top: 3px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: transform var(--transition), background var(--transition);
+  }
+  .toggle input:checked + .slider {
+    background: rgba(108,99,255,0.35);
+    border-color: var(--accent);
+  }
+  .toggle input:checked + .slider::before {
+    transform: translateX(20px);
+    background: var(--accent2);
+  }
+
   #ai-setup { padding: 16px; }
 
   /* ── Confirmation card ── */
@@ -959,11 +1018,21 @@
           </div>
         </div>
       </div>
+      <div id="ai-access-panel" style="display:none;">
+        <div class="section-card" style="margin-bottom:14px;">
+          <div class="section-header"><span class="section-title">🔐 AI Data Access</span></div>
+          <div style="padding:4px 16px 8px;">
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;line-height:1.5;">When a section is off, the AI can't <strong style="color:var(--text)">see</strong> its data or <strong style="color:var(--text)">edit/delete</strong> items in it. It can still <strong style="color:var(--green)">create</strong> new items anywhere.</p>
+            <div id="ai-access-options"></div>
+          </div>
+        </div>
+      </div>
       <div id="ai-chat-area">
         <div id="chat-messages"></div>
       </div>
       <div id="ai-input-bar">
         <button id="ai-clear-btn" title="Clear chat"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+        <button id="ai-access-btn" title="AI data access"><i class="fa-solid fa-sliders"></i></button>
         <textarea id="ai-input" placeholder="Ask me anything about your day…" rows="1"></textarea>
         <button id="ai-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
@@ -1899,7 +1968,16 @@ window.addEventListener('popstate', (e) => {
     return;
   }
 
-  // Priority 3: if instructions panel is open, close it
+  // Priority 3: if AI access panel is open, close it
+  const accessPanel = document.getElementById('ai-access-panel');
+  if (accessPanel && accessPanel.style.display === 'block') {
+    AI.closeAccessPanel();
+    _lastBackTime = 0;
+    pushBackGuard('base');
+    return;
+  }
+
+  // Priority 4: if instructions panel is open, close it
   const instrPanel = document.getElementById('ai-instructions-panel');
   if (instrPanel && instrPanel.style.display === 'block') {
     AI.closeInstructionsPanel();
@@ -1941,6 +2019,29 @@ const AI = {
   setCustomPrompt: (p) => localStorage.setItem('lm_ai_custom_prompt', p),
   clearCustomPrompt: () => localStorage.removeItem('lm_ai_custom_prompt'),
 
+  // ── AI access controls ──
+  // Areas: school, health, projects, problems, notes. Default all ON for existing users.
+  ACCESS_DEFAULTS: { school: true, health: true, projects: true, problems: true, notes: true },
+  getAccess() {
+    try {
+      const raw = localStorage.getItem('lm_ai_access');
+      const parsed = raw ? JSON.parse(raw) : {};
+      return { ...this.ACCESS_DEFAULTS, ...parsed };
+    } catch { return { ...this.ACCESS_DEFAULTS }; }
+  },
+  setAccess(area, val) {
+    const access = this.getAccess();
+    access[area] = !!val;
+    localStorage.setItem('lm_ai_access', JSON.stringify(access));
+  },
+  canSee(area) { return !!this.getAccess()[area]; },
+  // Map a section name to its access area. 'notes' maps to notes; problem_notes maps to problems.
+  sectionArea(section) {
+    if (section === 'problem_notes') return 'problems';
+    return section; // exams, labs, rehab, motion, physics, activities, business, cs, problems, rules, notes
+  },
+  canEditSection(section) { return this.canSee(this.sectionArea(section)); },
+
   // ── Keyword scoring — which sections does this message touch? ──
   scoreMessage(msg) {
     const m = msg.toLowerCase();
@@ -1955,22 +2056,23 @@ const AI = {
 
     // School
     if (/exam|test|quiz|midterm|final|study|lecture|lab|assignment|deadline|due|grade|subject|course|class/.test(m)) scores.school += 2;
-    if (data.exams.some(e => m.includes(e.title.toLowerCase()))) scores.school += 3;
-    if (data.labs.some(l => m.includes(l.title.toLowerCase()))) scores.school += 3;
+    if (this.canSee('school') && data.exams.some(e => m.includes(e.title.toLowerCase()))) scores.school += 3;
+    if (this.canSee('school') && data.labs.some(l => m.includes(l.title.toLowerCase()))) scores.school += 3;
 
     // Health
     if (/rehab|physio|exercise|workout|gym|sets|reps|weight|kg|stretch|shoulder|knee|ankle|motion|steps|walk|stand|health|pain|injury|log/.test(m)) scores.health += 2;
-    if (data.physics.some(e => m.includes(e.title.toLowerCase()))) scores.health += 3;
-    if (data.rehab.some(r => m.includes(r.title.toLowerCase()))) scores.health += 3;
+    if (this.canSee('health') && data.physics.some(e => m.includes(e.title.toLowerCase()))) scores.health += 3;
+    if (this.canSee('health') && data.rehab.some(r => m.includes(r.title.toLowerCase()))) scores.health += 3;
+    if (this.canSee('health') && data.activities.some(a => m.includes(a.title.toLowerCase()))) scores.health += 3;
 
     // Projects
     if (/project|business|startup|app|website|cs|code|coding|build|develop|launch|feature/.test(m)) scores.projects += 2;
-    if (data.business.some(b => m.includes(b.title.toLowerCase()))) scores.projects += 3;
-    if (data.cs.some(c => m.includes(c.title.toLowerCase()))) scores.projects += 3;
+    if (this.canSee('projects') && data.business.some(b => m.includes(b.title.toLowerCase()))) scores.projects += 3;
+    if (this.canSee('projects') && data.cs.some(c => m.includes(c.title.toLowerCase()))) scores.projects += 3;
 
     // Problems
     if (/problem|issue|bug|error|stuck|fix|debug|trouble|challenge/.test(m)) scores.problems += 2;
-    if (data.problems.some(p => m.includes(p.title.toLowerCase()))) scores.problems += 3;
+    if (this.canSee('problems') && data.problems.some(p => m.includes(p.title.toLowerCase()))) scores.problems += 3;
 
     // Notes
     if (/note|journal|wrote|write|ideas?|thought|reminder|summary/.test(m)) scores.notes += 2;
@@ -1983,7 +2085,7 @@ const AI = {
     return scores;
   },
 
-  // Build context — only include sections relevant to the message
+  // Build context — only include sections relevant to the message AND granted access
   buildContext(userMsg) {
     const today = TODAY();
     const scores = this.scoreMessage(userMsg || '');
@@ -1992,13 +2094,13 @@ const AI = {
     // If nothing matched strongly, or it's a general query, send everything
     const sendAll = topScore < 2 || scores.general >= 2;
 
-    // Decide which sections to include
+    // Decide which sections to include — always gated by user-granted access
     const include = {
-      school:   sendAll || scores.school >= 2,
-      health:   sendAll || scores.health >= 2,
-      projects: sendAll || scores.projects >= 2,
-      problems: sendAll || scores.problems >= 2,
-      notes:    sendAll || scores.notes >= 2,
+      school:   (sendAll || scores.school >= 2)   && this.canSee('school'),
+      health:   (sendAll || scores.health >= 2)   && this.canSee('health'),
+      projects: (sendAll || scores.projects >= 2) && this.canSee('projects'),
+      problems: (sendAll || scores.problems >= 2) && this.canSee('problems'),
+      notes:    (sendAll || scores.notes >= 2)    && this.canSee('notes'),
     };
 
     const parts = [`TODAY: ${today}`];
@@ -2051,10 +2153,64 @@ const AI = {
     return parts.join('\n\n');
   },
 
+  // ── Access panel UI ──
+  ACCESS_OPTIONS: [
+    { area: 'school',   icon: 'fa-graduation-cap', label: 'School',        sub: 'Exams, labs' },
+    { area: 'health',   icon: 'fa-heart-pulse',    label: 'Health',        sub: 'Rehab, motion, gym, activity tracker' },
+    { area: 'projects', icon: 'fa-diagram-project',label: 'Projects',      sub: 'Business, CS projects' },
+    { area: 'problems', icon: 'fa-triangle-exclamation', label: 'Problems', sub: 'Problems, rules, problem notes' },
+    { area: 'notes',    icon: 'fa-note-sticky',    label: 'Notes',         sub: 'Main notes' },
+  ],
+  renderAccessPanel() {
+    const container = document.getElementById('ai-access-options');
+    if (!container) return;
+    const access = this.getAccess();
+    container.innerHTML = this.ACCESS_OPTIONS.map(o => `
+      <div class="access-option">
+        <div class="access-option-label">
+          <i class="fa-solid ${o.icon}"></i>
+          <div>
+            ${o.label}
+            <div class="access-option-sub">${o.sub}</div>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" data-access-area="${o.area}" ${access[o.area] ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      </div>`).join('');
+    container.querySelectorAll('input[data-access-area]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        this.setAccess(cb.dataset.accessArea, cb.checked);
+      });
+    });
+  },
+  closeAccessPanel() {
+    document.getElementById('ai-access-panel').style.display = 'none';
+    document.getElementById('ai-access-btn').classList.remove('active');
+    document.getElementById('ai-chat-area').style.display = '';
+    document.getElementById('ai-input-bar').style.display = '';
+  },
+
   systemPrompt() {
     const custom = this.getCustomPrompt();
     const personal = (custom && custom.trim()) ? custom.trim() : this.defaultPersonalPrompt().trim();
-    return this.corePrompt() + '\n\nUSER PREFERENCES:\n' + personal;
+    const access = this.getAccess();
+    const accessList = Object.entries(access)
+      .map(([area, on]) => `${area.charAt(0).toUpperCase() + area.slice(1)}: ${on ? 'ACCESS granted (you can see and edit/delete)' : 'NO ACCESS — cannot see data, cannot update/delete items'}`)
+      .join('\n');
+    return this.corePrompt() + '\n\nUSER PREFERENCES:\n' + personal + '\n\nDATA ACCESS PERMISSIONS (set by the user in the app — respect them strictly):\n' + accessList + '\n\nACCESS RULES:\n- You can ALWAYS CREATE new items in any section, even ones with NO ACCESS.\n- You can only UPDATE or DELETE existing items in sections marked "ACCESS granted". Never attempt to update or delete items in NO ACCESS sections — instead tell the user you don\'t have access to that area.\n- Only sections with ACCESS granted will appear in your app data context.';
+  },
+
+  // ── Permission check — can the AI execute this edit request? ──
+  canExecute(args) {
+    const { action, section } = args;
+    // Creating items is always allowed anywhere.
+    if (action === 'add') return true;
+    // Appending to the main notes = adding content, allowed anywhere.
+    if (section === 'notes' && action === 'append') return true;
+    // Everything else (update, delete, replace notes, problem notes edits) requires access.
+    return this.canEditSection(section);
   },
 
   // ── FIXED — how the AI operates and how the app works. Not user-editable. ──
@@ -2258,8 +2414,9 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
     const msgs = document.getElementById('chat-messages');
     const rows = argsArray.map(args => {
       const { actionLabel, sectionLabel, detail } = this.describeEdit(args);
+      const blocked = !this.canExecute(args);
       return `
-        <div class="confirm-action"><strong>${actionLabel}</strong> in <strong>${sectionLabel}</strong></div>
+        <div class="confirm-action"><strong>${actionLabel}</strong> in <strong>${sectionLabel}</strong>${blocked ? ' <em style="color:var(--red)">(blocked — no AI access)</em>' : ''}</div>
         ${detail ? `<div class="confirm-detail">${detail}</div>` : ''}`;
     }).join('<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">');
 
@@ -2302,6 +2459,12 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
     const { action, section } = args;
     let resultMsg = '';
     try {
+      // Enforce access permissions — create/append allowed anywhere, modify/delete only with access.
+      if (!this.canExecute(args)) {
+        const area = this.sectionArea(section);
+        return `⛔ Blocked — you haven't granted the AI access to the ${area} area. Enable it in the AI Data Access panel (sliders icon) to allow edits there.`;
+      }
+
       if (section === 'notes') {
         if (action === 'append') {
           data.notes = (data.notes ? data.notes + '\n\n' : '') + (args.content || '');
@@ -2536,9 +2699,19 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
 
     document.getElementById('ai-instructions-close').addEventListener('click', () => this.closeInstructionsPanel());
 
+    // AI Access panel — open/close
+    document.getElementById('ai-access-btn').addEventListener('click', () => {
+      if (document.getElementById('ai-access-panel').style.display === 'block') {
+        this.closeAccessPanel();
+      } else {
+        this.openAccessPanel();
+      }
+    });
+
   },
 
   openInstructionsPanel() {
+    this.closeAccessPanel();
     const current = this.getCustomPrompt();
     document.getElementById('ai-instructions-textarea').value = current || this.defaultPersonalPrompt();
     document.getElementById('ai-instructions-panel').style.display = 'block';
@@ -2550,6 +2723,15 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
     document.getElementById('ai-instructions-panel').style.display = 'none';
     document.getElementById('ai-chat-area').style.display = '';
     document.getElementById('ai-input-bar').style.display = '';
+  },
+
+  openAccessPanel() {
+    this.closeInstructionsPanel();
+    this.renderAccessPanel();
+    document.getElementById('ai-access-panel').style.display = 'block';
+    document.getElementById('ai-access-btn').classList.add('active');
+    document.getElementById('ai-chat-area').style.display = 'none';
+    document.getElementById('ai-input-bar').style.display = 'none';
   },
 
   handleSend() {
