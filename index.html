@@ -231,6 +231,21 @@
   .delete-btn { background: rgba(248,113,113,0.1); color: var(--red); }
   .delete-btn:hover { background: rgba(248,113,113,0.25); }
 
+  .activity-stats {
+    display: flex; gap: 4px;
+    flex-shrink: 0;
+  }
+  .stat-pill {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 6px; border-radius: 20px;
+    white-space: nowrap;
+    background: var(--surface2);
+    color: var(--text-muted);
+  }
+  .stat-pill.green  { background: rgba(52,211,153,0.15);  color: var(--green); }
+  .stat-pill.amber  { background: rgba(251,191,36,0.15);  color: var(--amber); }
+  .stat-pill.red    { background: rgba(248,113,113,0.15); color: var(--red); }
+
   body.edit-mode .reorder-btns { display: flex; }
   body.edit-mode .delete-btn   { display: flex; }
 
@@ -1130,10 +1145,11 @@ const data = {
   rules:    LS.get('lm_rules',    DEFAULTS.rules),
   notes:    LS.get('lm_notes',    DEFAULTS.notes),
   checks:   LS.get('lm_checks',   {}),  // { date: { rehab: {id:bool}, motion: {id:bool} } }
-  physLogs: LS.get('lm_physlogs', {}),  // { exerciseId: [{date, sets, reps, weight}] }
+  // Note: save() writes "lm_" + key, so these use camelCase keys; fall back to legacy lowercase keys for migration.
+  physLogs: LS.get('lm_physLogs', LS.get('lm_physlogs', {})),  // { exerciseId: [{date, sets, reps, weight}] }
   probNotes: LS.get('lm_probNotes', LS.get('lm_probnotes', {})), // { problemId: text }
   activities: LS.get('lm_activities', DEFAULTS.activities),
-  activityLogs: LS.get('lm_activitylogs', {}), // { activityId: [{id, date}] }
+  activityLogs: LS.get('lm_activityLogs', LS.get('lm_activitylogs', {})), // { activityId: [{id, date}] }
 };
 
 function save(key) { LS.set('lm_' + key, data[key]); }
@@ -1165,6 +1181,25 @@ function activityBadge(act) {
   if (d <= 7)  return `<span class="countdown green">${d} days ago</span>`;
   if (d <= 30) return `<span class="countdown amber">${d} days ago</span>`;
   return `<span class="countdown red">${d} days ago</span>`;
+}
+
+// Frequency stats — count logs within the last N days (including today)
+function logCountSince(logs, days) {
+  const cutoff = new Date(); cutoff.setHours(0,0,0,0); cutoff.setDate(cutoff.getDate() - (days - 1));
+  const cutoffMs = cutoff.getTime();
+  return logs.filter(l => l.date && new Date(l.date + 'T00:00:00').getTime() >= cutoffMs).length;
+}
+function activityStatsHtml(act) {
+  const logs = getActivityLogs(act.id);
+  if (!logs.length) return '';
+  const d7  = logCountSince(logs, 7);
+  const d30 = logCountSince(logs, 30);
+  const cls7  = d7  >= 4 ? 'green' : (d7  >= 2 ? 'amber' : 'red');
+  const cls30 = d30 >= 15 ? 'green' : (d30 >= 8 ? 'amber' : 'red');
+  return `<div class="activity-stats">
+    <span class="stat-pill ${cls7}" title="Last 7 days">7d: ${d7}</span>
+    <span class="stat-pill ${cls30}" title="Last 30 days">30d: ${d30}</span>
+  </div>`;
 }
 
 // ── DOM references ──
@@ -1456,6 +1491,7 @@ function renderActivities() {
         <span class="item-title">${escHtml(act.title)}</span>
         <div class="item-sub">${logs.length} ${logs.length === 1 ? 'entry' : 'entries'}</div>
       </div>
+      ${activityStatsHtml(act)}
       ${activityBadge(act)}
       <button class="history-btn" data-action="open-activity" data-id="${act.id}" title="View history"><i class="fa-solid fa-clock-rotate-left"></i></button>
       <button class="delete-btn" data-action="delete" data-section="activities" data-id="${act.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
