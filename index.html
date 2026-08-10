@@ -494,38 +494,36 @@
     padding: 2px 10px;
   }
 
-  .status-select {
-    appearance: none;
-    -webkit-appearance: none;
-    border: 1px solid var(--border);
-    background-color: var(--surface2);
-    color: var(--text-muted);
-    font-family: inherit;
-    font-size: 11px; font-weight: 700;
-    border-radius: 20px;
-    padding: 4px 20px 4px 10px;
-    cursor: pointer;
+  .prob-status-badge {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+    white-space: nowrap;
     flex-shrink: 0;
-    outline: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%238b90a8' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 6px center;
   }
-  .status-select.priority {
-    color: var(--amber);
-    background-color: rgba(251,191,36,0.15);
-    border-color: transparent;
+  .prob-status-badge.priority { background: rgba(251,191,36,0.15); color: var(--amber); }
+  .prob-status-badge.later    { background: rgba(52,211,153,0.15); color: var(--green); }
+  .prob-status-badge.archived { background: var(--surface2); color: var(--text-muted); }
+
+  .status-toggle {
+    display: none;
+    gap: 2px;
+    flex-shrink: 0;
   }
-  .status-select.later {
-    color: var(--green);
-    background-color: rgba(52,211,153,0.15);
-    border-color: transparent;
-  }
-  .status-select.archived {
+  body.edit-mode .status-toggle { display: flex; }
+  .status-opt {
+    width: 26px; height: 26px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--surface2);
     color: var(--text-muted);
-    background-color: var(--surface2);
-    border-color: var(--border);
+    font-size: 11px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition);
+    padding: 0;
   }
+  .status-opt:hover { color: var(--text); }
+  .status-opt.priority.active { background: rgba(251,191,36,0.25); color: var(--amber); }
+  .status-opt.later.active    { background: rgba(52,211,153,0.25); color: var(--green); }
+  .status-opt.archived.active { background: var(--surface2); color: var(--text); }
 
   .list-item.status-archived .item-title { color: var(--text-muted); }
   .list-item.status-archived .notes-badge { opacity: 0.5; }
@@ -1758,7 +1756,7 @@ function renderProblems() {
 
 function renderProblemGroup(group, counts) {
   const isUncat = group === 'uncat';
-  const items = sortPinned('problems', data.problems.filter(p => isUncat ? !p.status : p.status === group));
+  const items = data.problems.filter(p => isUncat ? !p.status : p.status === group);
   if (!items.length) return '';
   const meta = isUncat ? { label: 'Uncategorized', icon: 'fa-inbox' } : PROBLEM_STATUS[group];
   return `
@@ -1773,22 +1771,22 @@ function renderProblemGroup(group, counts) {
 
 function problemRow(item) {
   const hasNotes = !!(data.probNotes[item.id] && data.probNotes[item.id].trim());
-  const pinned   = isPinned('problems', item.id);
   const s        = problemStatusOf(item);
-  const selClass = s ? ' ' + PROBLEM_STATUS[s].cls : '';
+  const badge    = s ? `<span class="prob-status-badge ${PROBLEM_STATUS[s].cls}">${PROBLEM_STATUS[s].label}</span>` : '';
+  const toggle   = `
+    <div class="status-toggle edit-ctrl">
+      <button class="status-opt priority${s === 'priority' ? ' active' : ''}" data-action="set-status-btn" data-status="priority" data-id="${item.id}" title="Priority"><i class="fa-solid fa-star"></i></button>
+      <button class="status-opt later${s === 'later' ? ' active' : ''}" data-action="set-status-btn" data-status="later" data-id="${item.id}" title="Get to"><i class="fa-solid fa-hourglass-half"></i></button>
+      <button class="status-opt archived${s === 'archived' ? ' active' : ''}" data-action="set-status-btn" data-status="archived" data-id="${item.id}" title="Archive"><i class="fa-solid fa-box-archive"></i></button>
+    </div>`;
   return `
-    <div class="list-item fade-in${pinned ? ' pinned' : ''}${s === 'archived' ? ' status-archived' : ''}" data-id="${item.id}" data-section="problems" style="cursor:pointer">
+    <div class="list-item fade-in${s === 'archived' ? ' status-archived' : ''}" data-id="${item.id}" data-section="problems" style="cursor:pointer">
       <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
-      ${pinBtn('problems', item.id)}
+      ${toggle}
       <div class="item-main" data-action="open-problem" data-id="${item.id}">
         <span class="item-title">${escHtml(item.title)}</span>${hasNotes ? '<span class="notes-badge">Has notes</span>' : ''}
       </div>
-      <select class="status-select${selClass}" data-action="set-status" data-id="${item.id}" title="Categorize this problem">
-        <option value=""${s ? '' : ' selected'}>Uncategorized</option>
-        <option value="priority"${s === 'priority' ? ' selected' : ''}>Priority</option>
-        <option value="later"${s === 'later' ? ' selected' : ''}>Get to</option>
-        <option value="archived"${s === 'archived' ? ' selected' : ''}>Archived</option>
-      </select>
+      ${badge}
       <button class="delete-btn" data-action="delete" data-section="problems" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>
     </div>`;
 }
@@ -2353,6 +2351,12 @@ document.getElementById('content').addEventListener('click', e => {
   if (action === 'add-activity') { addActivity(); return; }
   if (action === 'delete') { deleteItem(section, id); return; }
   if (action === 'pin')    { togglePin(section, id); return; }
+  if (action === 'set-status-btn') {
+    const cur = data.problems.find(p => p.id === id);
+    const next = (cur && cur.status === btn.dataset.status) ? '' : btn.dataset.status;
+    setProblemStatus(id, next);
+    return;
+  }
   if (action === 'up')     { moveItem(section, id, 'up'); return; }
   if (action === 'down')   { moveItem(section, id, 'down'); return; }
   if (action === 'log')    { logExercise(id); return; }
@@ -2379,8 +2383,6 @@ activityModalOverlay.addEventListener('click', e => { if (e.target === activityM
 
 // Checkbox change delegation
 document.getElementById('content').addEventListener('change', e => {
-  const sel = e.target.closest('select[data-action="set-status"]');
-  if (sel) { setProblemStatus(sel.dataset.id, sel.value); return; }
   const cb = e.target.closest('input[type="checkbox"]');
   if (!cb) return;
   const section = cb.dataset.section;
