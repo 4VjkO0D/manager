@@ -437,6 +437,222 @@
     margin-left: 6px;
   }
 
+  /* ── Problems triage ── */
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+
+  .review-btn {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(108,99,255,0.15);
+    color: var(--accent2);
+    border: 1px solid rgba(108,99,255,0.35);
+    border-radius: 20px;
+    padding: 5px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .review-btn:hover { background: rgba(108,99,255,0.3); }
+  .review-badge {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 20px;
+    padding: 0 6px; font-size: 10px; line-height: 16px;
+  }
+
+  .filter-chips {
+    display: flex; gap: 8px;
+    padding: 10px 14px 4px;
+    overflow-x: auto;
+  }
+  .filter-chips::-webkit-scrollbar { display: none; }
+
+  .chip {
+    display: flex; align-items: center; gap: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 12px; font-weight: 600;
+    border-radius: 20px;
+    padding: 5px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+  }
+  .chip i { font-size: 11px; }
+  .chip:hover { color: var(--text); }
+  .chip.active {
+    background: rgba(108,99,255,0.15);
+    border-color: var(--accent);
+    color: var(--accent2);
+  }
+
+  .group-count {
+    font-size: 11px; font-weight: 700;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border-radius: 20px;
+    padding: 2px 10px;
+  }
+
+  .status-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--border);
+    background-color: var(--surface2);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 11px; font-weight: 700;
+    border-radius: 20px;
+    padding: 4px 20px 4px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    outline: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%238b90a8' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+  }
+  .status-select.priority {
+    color: var(--amber);
+    background-color: rgba(251,191,36,0.15);
+    border-color: transparent;
+  }
+  .status-select.later {
+    color: var(--green);
+    background-color: rgba(52,211,153,0.15);
+    border-color: transparent;
+  }
+  .status-select.archived {
+    color: var(--text-muted);
+    background-color: var(--surface2);
+    border-color: var(--border);
+  }
+
+  .list-item.status-archived .item-title { color: var(--text-muted); }
+  .list-item.status-archived .notes-badge { opacity: 0.5; }
+
+  /* ── Problem triage (review) overlay ── */
+  #triage-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 210;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  }
+  #triage-overlay.open { transform: translateX(0); }
+
+  #triage-header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  #triage-close {
+    width: 34px; height: 34px;
+    border: none; border-radius: 50%;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition);
+  }
+  #triage-close:hover { background: var(--border); color: var(--text); }
+  #triage-title { font-size: 16px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #triage-progress { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+  #triage-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 18px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+
+  .triage-problem-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 18px;
+  }
+  .triage-problem-card.triage-fade { animation: triageFade 0.25s ease; }
+  @keyframes triageFade {
+    from { opacity: 0; transform: translateX(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+  #triage-problem-title {
+    font-size: 20px; font-weight: 700; line-height: 1.4;
+    word-break: break-word;
+  }
+  #triage-notes-hint { margin-top: 8px; font-size: 12px; color: var(--accent2); font-weight: 600; }
+
+  #triage-actions { display: flex; flex-direction: column; gap: 12px; }
+
+  .triage-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--text);
+    transition: opacity var(--transition), transform var(--transition), background var(--transition);
+  }
+  .triage-btn:active { transform: scale(0.98); }
+  .triage-btn.priority { background: rgba(251,191,36,0.15); color: var(--amber); }
+  .triage-btn.priority.active { background: rgba(251,191,36,0.38); }
+  .triage-btn.later { background: rgba(52,211,153,0.15); color: var(--green); }
+  .triage-btn.later.active { background: rgba(52,211,153,0.38); }
+  .triage-btn.archived { background: var(--surface2); color: var(--text-muted); }
+  .triage-btn.archived.active { background: rgba(139,144,168,0.28); color: var(--text); }
+  .triage-btn.delete { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  .triage-nav { display: flex; gap: 10px; }
+  .triage-nav button {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px; font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+  }
+  .triage-nav button:hover { background: var(--surface2); color: var(--text); }
+  .triage-nav button:disabled { opacity: 0.35; cursor: default; }
+
+  #triage-done {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  #triage-done.show { display: flex; }
+  #triage-done i { font-size: 44px; color: var(--green); }
+  #triage-done .done-text { font-size: 18px; font-weight: 700; }
+  #triage-done .done-sub { font-size: 13px; color: var(--text-muted); }
+  #triage-done button {
+    margin-top: 8px;
+    padding: 12px 30px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
   /* ── Divider ── */
   .divider { height: 1px; background: var(--border); margin: 0 14px; }
 
@@ -994,10 +1210,19 @@
       <div class="section-card">
         <div class="section-header">
           <span class="section-title">Problems</span>
-          <button class="add-btn" data-action="add" data-section="problems"><i class="fa-solid fa-plus"></i> Add</button>
+          <div class="header-actions">
+            <button class="review-btn" data-action="open-triage" id="open-triage-btn"><i class="fa-solid fa-clipboard-list"></i> Review</button>
+            <button class="add-btn" data-action="add" data-section="problems"><i class="fa-solid fa-plus"></i> Add</button>
+          </div>
         </div>
-        <div class="list-body" id="list-problems"></div>
+        <div class="filter-chips" id="problems-filters">
+          <button class="chip active" data-filter="all"><i class="fa-solid fa-layer-group"></i> All</button>
+          <button class="chip" data-filter="priority"><i class="fa-solid fa-star"></i> Priority</button>
+          <button class="chip" data-filter="later"><i class="fa-solid fa-hourglass-half"></i> Get to</button>
+          <button class="chip" data-filter="archived"><i class="fa-solid fa-box-archive"></i> Archived</button>
+        </div>
       </div>
+      <div id="list-problems"></div>
     </div>
 
     <!-- NOTES TAB -->
@@ -1073,6 +1298,37 @@
       <span id="autosave-indicator"></span>
     </div>
     <textarea id="problem-textarea" placeholder="Write your notes about this problem…"></textarea>
+  </div>
+
+  <!-- Problem triage (review) overlay -->
+  <div id="triage-overlay">
+    <div id="triage-header">
+      <button id="triage-close"><i class="fa-solid fa-arrow-left"></i></button>
+      <span id="triage-title">Review Problems</span>
+      <span id="triage-progress"></span>
+    </div>
+    <div id="triage-body">
+      <div id="triage-done">
+        <i class="fa-solid fa-circle-check"></i>
+        <div class="done-text">All problems reviewed!</div>
+        <div class="done-sub">Your problems are now categorized.</div>
+        <button id="triage-done-close">Done</button>
+      </div>
+      <div id="triage-card" class="triage-problem-card">
+        <div id="triage-problem-title"></div>
+        <div id="triage-notes-hint"></div>
+      </div>
+      <div id="triage-actions">
+        <button class="triage-btn priority" data-triage="priority"><i class="fa-solid fa-star"></i> Priority</button>
+        <button class="triage-btn later" data-triage="later"><i class="fa-solid fa-hourglass-half"></i> Get to</button>
+        <button class="triage-btn archived" data-triage="archived"><i class="fa-solid fa-box-archive"></i> Archive</button>
+        <button class="triage-btn delete" data-triage="delete"><i class="fa-solid fa-trash"></i> Delete</button>
+        <div class="triage-nav">
+          <button id="triage-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+          <button id="triage-skip">Skip</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Add modal -->
@@ -1265,6 +1521,7 @@ let currentTab = 'school';
 let editMode   = false;
 let currentProblemId = null;
 let autosaveTimer = null;
+let currentProblemFilter = 'all';  // 'all' | 'priority' | 'later' | 'archived'
 
 // Tab display names
 const TAB_NAMES = { school:'School', health:'Health', projects:'Projects', problems:'Problems', notes:'Notes', ai:'AI Assistant' };
@@ -1286,6 +1543,42 @@ function sortPinned(section, items) {
 function pinBtn(section, id) {
   const pinned = isPinned(section, id);
   return `<button class="priority-btn${pinned ? ' pinned' : ''}" data-action="pin" data-section="${section}" data-id="${id}" title="Toggle priority"><i class="fa-solid fa-star"></i></button>`;
+}
+
+// ── Problem triage status ──
+const PROBLEM_STATUS = {
+  priority: { label: 'Priority', icon: 'fa-star',           cls: 'priority' },
+  later:    { label: 'Get to',   icon: 'fa-hourglass-half', cls: 'later' },
+  archived: { label: 'Archived', icon: 'fa-box-archive',    cls: 'archived' }
+};
+function problemStatusOf(item) { return item.status || ''; }
+function statusLabel(s) { return (PROBLEM_STATUS[s] && PROBLEM_STATUS[s].label) || 'Uncategorized'; }
+function statusCounts() {
+  const c = { priority: 0, later: 0, archived: 0, uncat: 0 };
+  data.problems.forEach(p => {
+    if (PROBLEM_STATUS[p.status]) c[p.status]++;
+    else c.uncat++;
+  });
+  return c;
+}
+function applyProblemStatus(item, s) {
+  if (s === undefined) return;
+  if (s === 'none' || s === '') delete item.status;
+  else item.status = s;
+}
+function setProblemStatus(id, status) {
+  const item = data.problems.find(p => p.id === id);
+  if (!item) return;
+  applyProblemStatus(item, status);
+  save('problems');
+  renderProblems();
+}
+function setProblemFilter(filter) {
+  currentProblemFilter = filter;
+  document.querySelectorAll('#problems-filters .chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.filter === filter);
+  });
+  renderProblems();
 }
 
 /* Generic simple list (business, cs) */
@@ -1430,29 +1723,74 @@ function renderPhysics() {
   initDrag(listEl, 'physics');
 }
 
-/* Problems list */
+/* Problems list — grouped by triage status, filterable */
 function renderProblems() {
   const listEl = document.getElementById('list-problems');
+  const counts = statusCounts();
   listEl.innerHTML = '';
+
+  // Live badge on the Review button showing how many problems are still uncategorized
+  const reviewBtn = document.getElementById('open-triage-btn');
+  if (reviewBtn) {
+    reviewBtn.innerHTML = counts.uncat > 0
+      ? `<i class="fa-solid fa-clipboard-list"></i> Review <span class="review-badge">${counts.uncat}</span>`
+      : '<i class="fa-solid fa-clipboard-list"></i> Review';
+  }
+
   if (!data.problems.length) { listEl.innerHTML = emptyState('No problems listed'); return; }
-  sortPinned('problems', data.problems).forEach(item => {
-    const hasNotes = !!(data.probNotes[item.id] && data.probNotes[item.id].trim());
-    const pinned   = isPinned('problems', item.id);
-    const div = document.createElement('div');
-    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
-    div.style.cursor = 'pointer';
-    div.dataset.id = item.id;
-    div.dataset.section = 'problems';
-    div.innerHTML = `
+
+  const groups = currentProblemFilter === 'all'
+    ? ['priority', 'later', 'uncat', 'archived']
+    : [currentProblemFilter];
+
+  let html = groups.map(g => renderProblemGroup(g, counts)).join('');
+  if (!html) {
+    const label = currentProblemFilter === 'all'
+      ? 'No problems listed'
+      : 'No ' + statusLabel(currentProblemFilter).toLowerCase() + ' problems';
+    html = emptyState(label);
+  }
+  listEl.innerHTML = html;
+
+  // Re-enable drag reorder for each group's own list body
+  listEl.querySelectorAll('.list-body[data-group]').forEach(c => initDrag(c, 'problems'));
+}
+
+function renderProblemGroup(group, counts) {
+  const isUncat = group === 'uncat';
+  const items = sortPinned('problems', data.problems.filter(p => isUncat ? !p.status : p.status === group));
+  if (!items.length) return '';
+  const meta = isUncat ? { label: 'Uncategorized', icon: 'fa-inbox' } : PROBLEM_STATUS[group];
+  return `
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title"><i class="fa-solid ${meta.icon}"></i> ${meta.label}</span>
+        <span class="group-count">${items.length}</span>
+      </div>
+      <div class="list-body" data-group="${group}">${items.map(item => problemRow(item)).join('')}</div>
+    </div>`;
+}
+
+function problemRow(item) {
+  const hasNotes = !!(data.probNotes[item.id] && data.probNotes[item.id].trim());
+  const pinned   = isPinned('problems', item.id);
+  const s        = problemStatusOf(item);
+  const selClass = s ? ' ' + PROBLEM_STATUS[s].cls : '';
+  return `
+    <div class="list-item fade-in${pinned ? ' pinned' : ''}${s === 'archived' ? ' status-archived' : ''}" data-id="${item.id}" data-section="problems" style="cursor:pointer">
       <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
       ${pinBtn('problems', item.id)}
       <div class="item-main" data-action="open-problem" data-id="${item.id}">
         <span class="item-title">${escHtml(item.title)}</span>${hasNotes ? '<span class="notes-badge">Has notes</span>' : ''}
       </div>
-      <button class="delete-btn" data-action="delete" data-section="problems" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>`;
-    listEl.appendChild(div);
-  });
-  initDrag(listEl, 'problems');
+      <select class="status-select${selClass}" data-action="set-status" data-id="${item.id}" title="Categorize this problem">
+        <option value=""${s ? '' : ' selected'}>Uncategorized</option>
+        <option value="priority"${s === 'priority' ? ' selected' : ''}>Priority</option>
+        <option value="later"${s === 'later' ? ' selected' : ''}>Get to</option>
+        <option value="archived"${s === 'archived' ? ' selected' : ''}>Archived</option>
+      </select>
+      <button class="delete-btn" data-action="delete" data-section="problems" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>
+    </div>`;
 }
 
 /* Notes tab */
@@ -1631,14 +1969,19 @@ function initDrag(container, section) {
     const rect    = el.getBoundingClientRect();
     const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
     const before  = clientY < rect.top + rect.height / 2;
-    const fromIdx = getIdx(dragEl);
-    let   toIdx   = getIdx(el);
-    if (!before) toIdx++;
-    if (toIdx > fromIdx) toIdx--;
 
-    const arr = data[section];
-    const [moved] = arr.splice(fromIdx, 1);
-    arr.splice(toIdx, 0, moved);
+    // Work with real array positions by id — the visible container may be
+    // filtered/sorted (pinned first, or a status group), so container index
+    // doesn't always equal the array index.
+    const arr     = data[section];
+    const fromArr = arr.findIndex(x => x.id === dragEl.dataset.id);
+    let   toArr   = arr.findIndex(x => x.id === el.dataset.id);
+    if (fromArr < 0 || toArr < 0) { cleanup(); return; }
+    if (!before) toArr++;
+    if (toArr > fromArr) toArr--;
+
+    const [moved] = arr.splice(fromArr, 1);
+    arr.splice(toArr, 0, moved);
     save(section);
     cleanup();
     renderSection(section);
@@ -1738,6 +2081,7 @@ function renderSection(section) {
 // ── Delete ──
 function deleteItem(section, id) {
   data[section] = data[section].filter(x => x.id !== id);
+  if (section === 'problems') { delete data.probNotes[id]; save('probNotes'); }
   save(section);
   renderSection(section);
 }
@@ -1857,6 +2201,114 @@ function closeProblemEditor() {
   renderProblems();
 }
 
+// ── Problem triage (review) overlay ──
+const triageOverlay = document.getElementById('triage-overlay');
+let triageIds = [];
+let triageIdx = 0;
+
+function openTriage() {
+  triageIds = data.problems.map(p => p.id);
+  triageIdx = 0;
+  triageOverlay.classList.add('open');
+  pushBackGuard('triage');
+  renderTriage();
+}
+
+function closeTriage() {
+  triageOverlay.classList.remove('open');
+  triageIds = [];
+  triageIdx = 0;
+  renderProblems();
+}
+
+function renderTriage() {
+  const card     = document.getElementById('triage-card');
+  const done     = document.getElementById('triage-done');
+  const actions  = document.getElementById('triage-actions');
+  const progress = document.getElementById('triage-progress');
+
+  // Find the next still-existing problem (deletions are skipped automatically)
+  let cur = null;
+  while (triageIdx < triageIds.length && !cur) {
+    cur = data.problems.find(p => p.id === triageIds[triageIdx]);
+    if (!cur) triageIdx++;
+  }
+
+  if (!cur) {
+    card.style.display = 'none';
+    actions.style.display = 'none';
+    progress.textContent = '';
+    done.classList.add('show');
+    return;
+  }
+
+  done.classList.remove('show');
+  card.style.display = 'block';
+  actions.style.display = 'flex';
+  progress.textContent = `${triageIdx + 1} of ${triageIds.length}`;
+
+  document.getElementById('triage-problem-title').textContent = cur.title;
+  const hasNotes = data.probNotes[cur.id] && data.probNotes[cur.id].trim();
+  document.getElementById('triage-notes-hint').textContent = hasNotes ? '✎ Has notes' : '';
+
+  // Highlight the button matching the current status
+  const s = problemStatusOf(cur);
+  document.querySelectorAll('#triage-actions .triage-btn[data-triage]').forEach(b => {
+    b.classList.toggle('active', b.dataset.triage === s);
+  });
+
+  document.getElementById('triage-back').disabled = triageIdx === 0;
+
+  // Restart the fade-in animation for the card
+  card.classList.remove('triage-fade');
+  void card.offsetWidth;
+  card.classList.add('triage-fade');
+}
+
+function triageAdvance() {
+  triageIdx++;
+  renderTriage();
+}
+
+function triagePick(status) {
+  const id = triageIds[triageIdx];
+  const item = data.problems.find(p => p.id === id);
+  if (item) {
+    applyProblemStatus(item, status);
+    save('problems');
+  }
+  triageAdvance();
+}
+
+function triageDelete() {
+  const id = triageIds[triageIdx];
+  const item = data.problems.find(p => p.id === id);
+  if (item) {
+    delete data.probNotes[id];
+    data.problems = data.problems.filter(p => p.id !== id);
+    save('problems');
+    save('probNotes');
+  }
+  triageAdvance();
+}
+
+// Triage overlay events
+triageOverlay.addEventListener('click', e => {
+  const btn = e.target.closest('[data-triage]');
+  if (btn) {
+    const t = btn.dataset.triage;
+    if (t === 'delete') triageDelete();
+    else if (t) triagePick(t);
+    return;
+  }
+  if (e.target.closest('#triage-close') || e.target.closest('#triage-done-close')) { closeTriage(); return; }
+  if (e.target.closest('#triage-back')) {
+    if (triageIdx > 0) { triageIdx--; renderTriage(); }
+    return;
+  }
+  if (e.target.closest('#triage-skip')) { triageAdvance(); return; }
+});
+
 // Auto-save problem notes
 probTA.addEventListener('input', () => {
   if (!currentProblemId) return;
@@ -1888,6 +2340,9 @@ function addActivity() {
 
 // ── Event delegation (content area) ──
 document.getElementById('content').addEventListener('click', e => {
+  const chip = e.target.closest('[data-filter]');
+  if (chip) { setProblemFilter(chip.dataset.filter); return; }
+
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const action  = btn.dataset.action;
@@ -1903,6 +2358,7 @@ document.getElementById('content').addEventListener('click', e => {
   if (action === 'log')    { logExercise(id); return; }
   if (action === 'open-problem') { openProblemEditor(id); return; }
   if (action === 'open-activity') { openActivityModal(id); return; }
+  if (action === 'open-triage') { openTriage(); return; }
 });
 
 // ── Activity modal event delegation ──
@@ -1923,6 +2379,8 @@ activityModalOverlay.addEventListener('click', e => { if (e.target === activityM
 
 // Checkbox change delegation
 document.getElementById('content').addEventListener('change', e => {
+  const sel = e.target.closest('select[data-action="set-status"]');
+  if (sel) { setProblemStatus(sel.dataset.id, sel.value); return; }
   const cb = e.target.closest('input[type="checkbox"]');
   if (!cb) return;
   const section = cb.dataset.section;
@@ -1983,6 +2441,14 @@ window.addEventListener('popstate', (e) => {
   // Priority 0: if activity history modal is open, close it
   if (activityModalOverlay.classList.contains('open')) {
     closeActivityModal();
+    _lastBackTime = 0;
+    pushBackGuard('base');
+    return;
+  }
+
+  // Priority 0.5: if problem triage overlay is open, close it
+  if (triageOverlay.classList.contains('open')) {
+    closeTriage();
     _lastBackTime = 0;
     pushBackGuard('base');
     return;
@@ -2178,7 +2644,11 @@ const AI = {
     }
 
     if (include.problems) {
-      parts.push(`PROBLEMS LIST:\n${data.problems.map(p => p.title).join('\n') || 'None'}`);
+      const probLines = data.problems.map(p => {
+        const s = problemStatusOf(p);
+        return s ? `${p.title} [${statusLabel(s)}]` : p.title;
+      });
+      parts.push(`PROBLEMS LIST (triage status in brackets: Priority / Get to / Archived; no brackets = Uncategorized):\n${probLines.join('\n') || 'None'}`);
       parts.push(`RULES (things the user implements to combat their problems):\n${data.rules.map(r => r.title).join('\n') || 'None'}`);
     }
 
@@ -2256,7 +2726,7 @@ const AI = {
 You have access to the user's live data (shown in each message). Use it proactively.
 
 YOUR CAPABILITIES:
-1. EDIT APP DATA — You can add, update, delete, or append to items using the edit_app_data tool. Use it when the user asks to add/remove/change exams, labs, rehab exercises, motion goals, gym exercises, business projects, CS projects, problems, rules, the main notes, or problem notes. For notes use action "append" to add content or "update" to replace. Always use the tool — never just say "I've added it" without calling it.
+1. EDIT APP DATA — You can add, update, delete, or append to items using the edit_app_data tool. Use it when the user asks to add/remove/change exams, labs, rehab exercises, motion goals, gym exercises, business projects, CS projects, problems, rules, the main notes, or problem notes. For notes use action "append" to add content or "update" to replace. Always use the tool — never just say "I've added it" without calling it. Problems have a triage status — set it via the status field: priority, later, archived, or none (clear).
 2. WEB SEARCH — Use the web_search tool when the user asks about anything that benefits from current information: rehab advice, learning resources, health topics, study techniques, etc. Prefer searching over guessing.
 3. DAILY SUMMARY — Give a clean structured summary with sections: 📚 School, 💪 Health, 💡 Notes & Ideas, 🎯 Learning.
 4. JOURNAL COMPANION — Help reflect on notes/ideas. Ask one good follow-up question.
@@ -2321,6 +2791,7 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
               weight: { type: 'number', description: 'Weight in kg. Only for physics/gym exercises.' },
               new_title: { type: 'string', description: 'New title when action is update.' },
               new_date:  { type: 'string', description: 'New date (YYYY-MM-DD) when action is update.' },
+              status:    { type: 'string', enum: ['priority', 'later', 'archived', 'none'], description: 'Triage category for a problem: priority (focus on it), later (will get to it), archived (shelved), or none to clear the category. Only applies to problems.' },
             },
             required: ['action', 'section']
           }
@@ -2534,6 +3005,7 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
         if (args.sets !== undefined)   item.sets   = args.sets;
         if (args.reps !== undefined)   item.reps   = args.reps;
         if (args.weight !== undefined) item.weight = args.weight;
+        if (args.status !== undefined) applyProblemStatus(item, args.status);
         data[section].push(item);
         save(section);
         renderSection(section);
@@ -2541,9 +3013,16 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
 
       } else if (action === 'delete') {
         const before = data[section].length;
+        const removedItems = data[section].filter(x =>
+          x.title?.toLowerCase().includes((args.title || '').toLowerCase())
+        );
         data[section] = data[section].filter(x =>
           !x.title?.toLowerCase().includes((args.title || '').toLowerCase())
         );
+        if (section === 'problems') {
+          removedItems.forEach(x => delete data.probNotes[x.id]);
+          save('probNotes');
+        }
         const removed = before - data[section].length;
         save(section);
         renderSection(section);
@@ -2561,6 +3040,7 @@ TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" �
           if (args.sets !== undefined)      item.sets   = args.sets;
           if (args.reps !== undefined)      item.reps   = args.reps;
           if (args.weight !== undefined)    item.weight = args.weight;
+          if (args.status !== undefined)    applyProblemStatus(item, args.status);
           save(section);
           renderSection(section);
           resultMsg = `Done — **${args.title}** updated in ${section}.`;
