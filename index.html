@@ -697,6 +697,40 @@
   }
   .notif-perm p { line-height: 1.5; }
 
+  #notif-saved {
+    min-height: 18px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    text-align: center;
+  }
+
+  .notif-allow-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .notif-allow-btn:hover { opacity: 0.9; }
+
+  .notif-blocked-help {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding: 10px 12px;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: var(--radius-sm);
+  }
+  .notif-blocked-help strong { color: var(--text); }
+
   .notif-row {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 16px;
@@ -1437,11 +1471,16 @@
       <span id="notif-title">Notifications</span>
     </div>
     <div id="notif-body">
+      <div id="notif-saved"></div>
       <div class="section-card">
         <div class="section-header">
           <span class="section-title">Permission</span>
         </div>
-        <div class="notif-perm"><p id="notif-perm-status">Checking…</p></div>
+        <div class="notif-perm">
+          <p id="notif-perm-status">Checking…</p>
+          <button id="notif-allow-btn" class="notif-allow-btn" style="display:none">Allow notifications</button>
+          <div id="notif-blocked-help" class="notif-blocked-help" style="display:none">Chrome blocked notifications for this site. To fix: tap <strong>⋮ → Settings → Site settings → Notifications</strong> in the Chrome menu, find this site, and set it to <strong>Allow</strong>. Then return here and switch the master toggle on.</div>
+        </div>
         <label class="notif-row">
           <input type="checkbox" id="nf-master">
           <span><strong>🔔 Notifications on</strong><small>Master switch for all reminders</small></span>
@@ -2694,14 +2733,24 @@ function updateNotifBell() {
 function renderNotifPanel() {
   const prefs = loadNotifPrefs();
   const status = document.getElementById('notif-perm-status');
+  const allowBtn = document.getElementById('notif-allow-btn');
+  const blockedHelp = document.getElementById('notif-blocked-help');
   if (!notifSupported()) {
     status.textContent = 'Not supported on this device/browser.';
+    allowBtn.style.display = 'none';
+    blockedHelp.style.display = 'none';
   } else if (Notification.permission === 'granted') {
     status.textContent = '✅ Notifications are allowed — reminders show while the app is running.';
+    allowBtn.style.display = 'none';
+    blockedHelp.style.display = 'none';
   } else if (Notification.permission === 'denied') {
-    status.textContent = '⛔ Blocked — allow notifications for this site in your browser settings, then switch the master toggle on.';
+    status.textContent = '⛔ Blocked by your browser.';
+    allowBtn.style.display = 'none';
+    blockedHelp.style.display = 'block';
   } else {
-    status.textContent = 'Switch the master toggle on below to allow notifications.';
+    status.textContent = 'Allow notifications to get reminders.';
+    allowBtn.style.display = 'block';
+    blockedHelp.style.display = 'none';
   }
 
   document.getElementById('nf-master').checked = !!prefs.enabled;
@@ -2720,10 +2769,20 @@ function renderNotifPanel() {
   document.getElementById('nf-activity-cfg2').style.display = prefs.activity.on ? 'flex' : 'none';
 }
 
+function notifSaveFeedback() {
+  const el = document.getElementById('notif-saved');
+  if (!el) return;
+  el.textContent = 'Saved ✓';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.textContent = ''; }, 1500);
+}
+
 function openNotif() {
   renderNotifPanel();
   notifOverlay.classList.add('open');
   pushBackGuard('notif');
+  // Opening via the bell counts as a user gesture — ask for permission right away
+  if (notifSupported() && Notification.permission === 'default') requestNotifPermission();
 }
 function closeNotif() {
   notifOverlay.classList.remove('open');
@@ -2744,6 +2803,7 @@ function requestNotifPermission() {
 
 notifOverlay.addEventListener('click', e => {
   if (e.target.closest('#notif-close')) { closeNotif(); return; }
+  if (e.target.closest('#notif-allow-btn')) { requestNotifPermission(); return; }
   if (e.target.closest('#notif-test')) {
     if (notifSupported() && Notification.permission === 'granted') {
       sendNotif('🔔 Test notification', 'Notifications are working!', 'test');
@@ -2772,6 +2832,7 @@ notifOverlay.addEventListener('change', e => {
     saveNotifPrefs(prefs);
     renderNotifPanel();
     updateNotifBell();
+    notifSaveFeedback();
     return;
   }
 
@@ -2786,6 +2847,21 @@ notifOverlay.addEventListener('change', e => {
   saveNotifPrefs(prefs);
   renderNotifPanel();
   updateNotifBell();
+  notifSaveFeedback();
+});
+
+// Save time/number fields as they change too — Android's time picker can be picky about `change`
+notifOverlay.addEventListener('input', e => {
+  const id = e.target.id;
+  if (!id) return;
+  if (id !== 'nf-exams-days' && id !== 'nf-activity-days' && id !== 'nf-health-time' && id !== 'nf-activity-time') return;
+  const prefs = loadNotifPrefs();
+  if (id === 'nf-health-time') prefs.health.time = e.target.value || '18:00';
+  if (id === 'nf-activity-time') prefs.activity.time = e.target.value || '21:00';
+  if (id === 'nf-exams-days') prefs.exams.days = Math.max(1, parseInt(e.target.value, 10) || 1);
+  if (id === 'nf-activity-days') prefs.activity.days = Math.max(1, parseInt(e.target.value, 10) || 1);
+  saveNotifPrefs(prefs);
+  notifSaveFeedback();
 });
 
 document.getElementById('notif-btn').addEventListener('click', openNotif);
