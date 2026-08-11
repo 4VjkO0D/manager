@@ -83,7 +83,7 @@
     color: var(--text);
   }
 
-  #edit-btn {
+  #edit-btn, #notif-btn {
     width: 38px; height: 38px;
     border-radius: 50%;
     border: none;
@@ -94,8 +94,9 @@
     display: flex; align-items: center; justify-content: center;
     transition: background var(--transition), color var(--transition), transform var(--transition);
   }
-  #edit-btn:hover { background: var(--border); color: var(--text); }
+  #edit-btn:hover, #notif-btn:hover { background: var(--border); color: var(--text); }
   #edit-btn.active { background: var(--accent); color: #fff; transform: scale(1.05); }
+  #notif-btn.on { color: var(--accent2); }
 
   /* ── Content ── */
   #content {
@@ -651,6 +652,103 @@
     cursor: pointer;
   }
 
+  /* ── Notifications settings overlay ── */
+  #notif-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 215;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  }
+  #notif-overlay.open { transform: translateX(0); }
+
+  #notif-header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  #notif-close {
+    width: 34px; height: 34px;
+    border: none; border-radius: 50%;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition);
+  }
+  #notif-close:hover { background: var(--border); color: var(--text); }
+  #notif-title { font-size: 16px; font-weight: 700; flex: 1; }
+
+  #notif-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .notif-perm {
+    padding: 14px 16px 4px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .notif-perm p { line-height: 1.5; }
+
+  .notif-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .notif-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+  .notif-row span { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .notif-row strong { font-size: 14px; font-weight: 600; }
+  .notif-row small { font-size: 12px; color: var(--text-muted); }
+
+  .notif-config {
+    display: none;
+    align-items: center; gap: 8px;
+    padding: 0 16px 12px 46px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .notif-config input {
+    width: 70px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 8px;
+    outline: none;
+  }
+  .notif-config input[type="time"] { width: 110px; }
+
+  .notif-test-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .notif-test-btn:hover { opacity: 0.9; }
+  .notif-hint {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    text-align: center;
+  }
+
   /* ── Divider ── */
   .divider { height: 1px; background: var(--border); margin: 0 14px; }
 
@@ -1118,7 +1216,10 @@
   <!-- Header -->
   <header id="header">
     <span id="tab-title">School</span>
-    <button id="edit-btn" title="Toggle edit mode"><i class="fa-solid fa-pen"></i></button>
+    <div class="header-actions">
+      <button id="notif-btn" title="Notifications"><i class="fa-solid fa-bell"></i></button>
+      <button id="edit-btn" title="Toggle edit mode"><i class="fa-solid fa-pen"></i></button>
+    </div>
   </header>
 
   <!-- Main content -->
@@ -1326,6 +1427,69 @@
           <button id="triage-skip">Skip</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Notifications settings overlay -->
+  <div id="notif-overlay">
+    <div id="notif-header">
+      <button id="notif-close"><i class="fa-solid fa-arrow-left"></i></button>
+      <span id="notif-title">Notifications</span>
+    </div>
+    <div id="notif-body">
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Permission</span>
+        </div>
+        <div class="notif-perm"><p id="notif-perm-status">Checking…</p></div>
+        <label class="notif-row">
+          <input type="checkbox" id="nf-master">
+          <span><strong>🔔 Notifications on</strong><small>Master switch for all reminders</small></span>
+        </label>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Reminders</span>
+        </div>
+        <label class="notif-row">
+          <input type="checkbox" id="nf-exams">
+          <span><strong>📚 Exams &amp; Labs</strong><small>When an exam or deadline is approaching</small></span>
+        </label>
+        <div class="notif-config" id="nf-exams-cfg">
+          <span>Remind when within</span>
+          <input type="number" id="nf-exams-days" min="1" max="30" value="3">
+          <span>days</span>
+        </div>
+        <label class="notif-row">
+          <input type="checkbox" id="nf-health">
+          <span><strong>💪 Daily health</strong><small>Remind about leftover rehab / motion goals</small></span>
+        </label>
+        <div class="notif-config" id="nf-health-cfg">
+          <span>Remind at</span>
+          <input type="time" id="nf-health-time" value="18:00">
+        </div>
+        <label class="notif-row">
+          <input type="checkbox" id="nf-activity">
+          <span><strong>📊 Activity tracker</strong><small>Daily reminder to log your activities</small></span>
+        </label>
+        <div class="notif-config" id="nf-activity-cfg">
+          <span>Remind daily at</span>
+          <input type="time" id="nf-activity-time" value="21:00">
+        </div>
+        <div class="notif-config" id="nf-activity-cfg2">
+          <span>Overdue after</span>
+          <input type="number" id="nf-activity-days" min="1" max="90" value="7">
+          <span>days</span>
+        </div>
+        <label class="notif-row">
+          <input type="checkbox" id="nf-problems">
+          <span><strong>🗂 Problems</strong><small>Remind to review uncategorized problems</small></span>
+        </label>
+      </div>
+
+      <button id="notif-test" class="notif-test-btn"><i class="fa-solid fa-bell"></i> Send test notification</button>
+      <p class="notif-hint">Reminders fire while Life Manager is open or backgrounded on Android — not while the app is fully closed. To get closed-app reminders we'd need push notifications (requires your server).</p>
     </div>
   </div>
 
@@ -2418,8 +2582,219 @@ backBtn.addEventListener('click', closeProblemEditor);
 
 // ── Refresh countdown every minute ──
 setInterval(() => { if (currentTab === 'school') renderExams(); }, 60000);
+// ── Notifications (while the app is running) ──
+const notifOverlay = document.getElementById('notif-overlay');
+
+const NOTIF_PREFS_DEFAULT = {
+  enabled: false,
+  exams:    { on: true, days: 3 },
+  health:   { on: true, time: '18:00' },
+  activity: { on: true, time: '21:00', days: 7 },
+  problems: { on: true }
+};
+
+function loadNotifPrefs() {
+  const stored = LS.get('lm_notif_prefs', {});
+  const p = {};
+  Object.keys(NOTIF_PREFS_DEFAULT).forEach(k => {
+    const def = NOTIF_PREFS_DEFAULT[k];
+    if (def && typeof def === 'object') p[k] = Object.assign({}, def, stored[k] || {});
+    else p[k] = (k in stored) ? stored[k] : def;
+  });
+  return p;
+}
+function saveNotifPrefs(p) { LS.set('lm_notif_prefs', p); }
+
+function notifSupported() { return 'Notification' in window; }
+
+function sendNotif(title, body, tag) {
+  if (!notifSupported() || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(title, { body, tag, icon: 'icon-192.png' });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch (e) {}
+}
+
+function notifCheck() {
+  const prefs = loadNotifPrefs();
+  if (!prefs.enabled || !notifSupported() || Notification.permission !== 'granted') return;
+
+  const today = TODAY();
+  let fired = LS.get('lm_notif_fired', {});
+  if (fired.date !== today) fired = { date: today, exams: {}, health: false, activity: false, problems: false };
+
+  if (prefs.exams.on) {
+    data.exams.forEach(ex => {
+      if (fired.exams[ex.id]) return;
+      const d = daysUntil(ex.date);
+      if (d >= 0 && d <= prefs.exams.days) {
+        sendNotif('📚 Exam soon', ex.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + ex.id);
+        fired.exams[ex.id] = true;
+      }
+    });
+    data.labs.forEach(l => {
+      if (!l.date || fired.exams[l.id]) return;
+      const d = daysUntil(l.date);
+      if (d >= 0 && d <= prefs.exams.days) {
+        sendNotif('📚 Deadline soon', l.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + l.id);
+        fired.exams[l.id] = true;
+      }
+    });
+  }
+
+  const now = new Date();
+  const curMin = now.getHours() * 60 + now.getMinutes();
+  const pastTime = t => {
+    const p = (t || '18:00').split(':');
+    return curMin >= ((parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0));
+  };
+
+  if (prefs.health.on && !fired.health && pastTime(prefs.health.time)) {
+    const todayChecks = data.checks[today] || {};
+    const missing = [];
+    data.rehab.forEach(r => { if (!todayChecks.rehab?.[r.id]) missing.push(r.title); });
+    data.motion.forEach(m => { if (!todayChecks.motion?.[m.id]) missing.push(m.title); });
+    if (missing.length) sendNotif('💪 Daily health', 'Still to do today: ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? '…' : ''), 'health');
+    fired.health = true;
+  }
+
+  // Activity tracker — one daily reminder at the configured time (default 9 PM)
+  if (prefs.activity.on && !fired.activity && pastTime(prefs.activity.time || '21:00')) {
+    const overdue = data.activities.filter(a => {
+      const logs = getActivityLogs(a.id);
+      if (!logs.length) return true;
+      const latest = [...logs].sort((x, y) => (y.date || '').localeCompare(x.date || ''))[0];
+      return daysAgo(latest.date) >= prefs.activity.days;
+    });
+    const body = overdue.length
+      ? 'Overdue: ' + overdue.slice(0, 4).map(x => x.title).join(', ') + (overdue.length > 4 ? '…' : '') + ' — log them to catch up!'
+      : 'Log any activities you did today to keep your tracker up to date.';
+    sendNotif('📊 Activity tracker', body, 'activity');
+    fired.activity = true;
+  }
+
+  if (prefs.problems.on && !fired.problems) {
+    const uncat = statusCounts().uncat;
+    if (uncat > 0) {
+      sendNotif('🗂 Problem review', 'You have ' + uncat + ' uncategorized problem' + (uncat === 1 ? '' : 's') + ' — tap Review to triage them', 'problems');
+      fired.problems = true;
+    }
+  }
+
+  LS.set('lm_notif_fired', fired);
+}
+// Notifications panel UI
+function updateNotifBell() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  const prefs = loadNotifPrefs();
+  btn.classList.toggle('on', !!(prefs.enabled && notifSupported() && Notification.permission === 'granted'));
+}
+
+function renderNotifPanel() {
+  const prefs = loadNotifPrefs();
+  const status = document.getElementById('notif-perm-status');
+  if (!notifSupported()) {
+    status.textContent = 'Not supported on this device/browser.';
+  } else if (Notification.permission === 'granted') {
+    status.textContent = '✅ Notifications are allowed — reminders show while the app is running.';
+  } else if (Notification.permission === 'denied') {
+    status.textContent = '⛔ Blocked — allow notifications for this site in your browser settings, then switch the master toggle on.';
+  } else {
+    status.textContent = 'Switch the master toggle on below to allow notifications.';
+  }
+
+  document.getElementById('nf-master').checked = !!prefs.enabled;
+  document.getElementById('nf-exams').checked = !!prefs.exams.on;
+  document.getElementById('nf-exams-days').value = prefs.exams.days;
+  document.getElementById('nf-health').checked = !!prefs.health.on;
+  document.getElementById('nf-health-time').value = prefs.health.time || '18:00';
+  document.getElementById('nf-activity').checked = !!prefs.activity.on;
+  document.getElementById('nf-activity-time').value = prefs.activity.time || '21:00';
+  document.getElementById('nf-activity-days').value = prefs.activity.days;
+  document.getElementById('nf-problems').checked = !!prefs.problems.on;
+
+  document.getElementById('nf-exams-cfg').style.display = prefs.exams.on ? 'flex' : 'none';
+  document.getElementById('nf-health-cfg').style.display = prefs.health.on ? 'flex' : 'none';
+  document.getElementById('nf-activity-cfg').style.display = prefs.activity.on ? 'flex' : 'none';
+  document.getElementById('nf-activity-cfg2').style.display = prefs.activity.on ? 'flex' : 'none';
+}
+
+function openNotif() {
+  renderNotifPanel();
+  notifOverlay.classList.add('open');
+  pushBackGuard('notif');
+}
+function closeNotif() {
+  notifOverlay.classList.remove('open');
+  updateNotifBell();
+}
+
+function requestNotifPermission() {
+  if (!notifSupported()) return;
+  if (Notification.permission === 'granted') { renderNotifPanel(); updateNotifBell(); return; }
+  Notification.requestPermission().then(() => {
+    const prefs = loadNotifPrefs();
+    prefs.enabled = Notification.permission === 'granted';
+    saveNotifPrefs(prefs);
+    renderNotifPanel();
+    updateNotifBell();
+  }).catch(() => {});
+}
+
+notifOverlay.addEventListener('click', e => {
+  if (e.target.closest('#notif-close')) { closeNotif(); return; }
+  if (e.target.closest('#notif-test')) {
+    if (notifSupported() && Notification.permission === 'granted') {
+      sendNotif('🔔 Test notification', 'Notifications are working!', 'test');
+    } else {
+      requestNotifPermission();
+    }
+  }
+});
+
+notifOverlay.addEventListener('change', e => {
+  const id = e.target.id;
+  if (!id || !id.startsWith('nf-')) return;
+  const prefs = loadNotifPrefs();
+
+  if (id === 'nf-master') {
+    prefs.enabled = e.target.checked;
+    if (prefs.enabled && notifSupported() && Notification.permission === 'default') {
+      Notification.requestPermission().then(() => {
+        prefs.enabled = Notification.permission === 'granted';
+        saveNotifPrefs(prefs);
+        renderNotifPanel();
+        updateNotifBell();
+      });
+    }
+    if (prefs.enabled && notifSupported() && Notification.permission === 'denied') prefs.enabled = false;
+    saveNotifPrefs(prefs);
+    renderNotifPanel();
+    updateNotifBell();
+    return;
+  }
+
+  if (id === 'nf-exams') prefs.exams.on = e.target.checked;
+  if (id === 'nf-exams-days') prefs.exams.days = Math.max(1, parseInt(e.target.value, 10) || 1);
+  if (id === 'nf-health') prefs.health.on = e.target.checked;
+  if (id === 'nf-health-time') prefs.health.time = e.target.value || '18:00';
+  if (id === 'nf-activity') prefs.activity.on = e.target.checked;
+  if (id === 'nf-activity-time') prefs.activity.time = e.target.value || '21:00';
+  if (id === 'nf-activity-days') prefs.activity.days = Math.max(1, parseInt(e.target.value, 10) || 1);
+  if (id === 'nf-problems') prefs.problems.on = e.target.checked;
+  saveNotifPrefs(prefs);
+  renderNotifPanel();
+  updateNotifBell();
+});
+
+document.getElementById('notif-btn').addEventListener('click', openNotif);
+
+
 
 // ── Init ──
+notifCheck();
+setInterval(notifCheck, 60000);
 renderAll();
 
 // ── Android back-gesture / History API ──
@@ -2443,6 +2818,14 @@ window.addEventListener('popstate', (e) => {
   // Priority 0: if activity history modal is open, close it
   if (activityModalOverlay.classList.contains('open')) {
     closeActivityModal();
+    _lastBackTime = 0;
+    pushBackGuard('base');
+    return;
+  }
+
+  // Priority 0.4: if notifications panel is open, close it
+  if (notifOverlay.classList.contains('open')) {
+    closeNotif();
     _lastBackTime = 0;
     pushBackGuard('base');
     return;
