@@ -1028,6 +1028,22 @@
     padding: 0 16px 14px;
     font-size: 12px; color: var(--text-muted); line-height: 1.5;
   }
+
+  /* ── Overview tab ── */
+  .overview-item {
+    display: flex; align-items: center;
+    padding: 10px 14px;
+    gap: 10px;
+    transition: background var(--transition);
+    cursor: pointer;
+  }
+  .overview-item:hover { background: rgba(255,255,255,0.03); }
+  .overview-go { color: var(--text-muted); font-size: 12px; flex-shrink: 0; transition: color var(--transition); }
+  .overview-item:hover .overview-go { color: var(--accent2); }
+  .overview-empty { text-align: center; padding: 48px 20px; }
+  .overview-empty i { font-size: 34px; opacity: 0.4; margin-bottom: 12px; display: block; }
+  .overview-empty .oe-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .overview-empty .oe-sub { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -1035,7 +1051,7 @@
 <div id="app">
   <!-- Header -->
   <header id="header">
-    <span id="tab-title">School</span>
+    <span id="tab-title">Overview</span>
     <div class="header-actions">
       <button id="notif-btn" title="Notifications"><i class="fa-solid fa-bell"></i></button>
       <button id="edit-btn" title="Toggle edit mode"><i class="fa-solid fa-pen"></i></button>
@@ -1045,8 +1061,13 @@
   <!-- Main content -->
   <main id="content">
 
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="tab-panel active">
+      <div id="list-overview"></div>
+    </div>
+
     <!-- SCHOOL TAB -->
-    <div id="tab-school" class="tab-panel active">
+    <div id="tab-school" class="tab-panel">
       <!-- Exams -->
       <div class="section-card" id="sec-exams">
         <div class="section-header">
@@ -1166,7 +1187,8 @@
 
   <!-- Bottom Nav -->
   <nav id="bottom-nav">
-    <button class="nav-btn active" data-tab="school"><i class="fa-solid fa-graduation-cap"></i>School</button>
+    <button class="nav-btn active" data-tab="overview"><i class="fa-solid fa-gauge-high"></i>Overview</button>
+    <button class="nav-btn" data-tab="school"><i class="fa-solid fa-graduation-cap"></i>School</button>
     <button class="nav-btn" data-tab="health"><i class="fa-solid fa-heart-pulse"></i>Health</button>
     <button class="nav-btn" data-tab="projects"><i class="fa-solid fa-diagram-project"></i>Projects</button>
     <button class="nav-btn" data-tab="problems"><i class="fa-solid fa-triangle-exclamation"></i>Problems</button>
@@ -1468,14 +1490,14 @@ const activityAddEntryBtn  = document.getElementById('activity-add-entry');
 const activityModalClose   = document.getElementById('activity-modal-close');
 let currentActivityId = null;
 
-let currentTab = 'school';
+let currentTab = 'overview';
 let editMode   = false;
 let currentProblemId = null;
 let autosaveTimer = null;
 let currentProblemFilter = 'all';  // 'all' | 'priority' | 'later' | 'archived'
 
 // Tab display names
-const TAB_NAMES = { school:'School', health:'Health', projects:'Projects', problems:'Problems', notes:'Notes' };
+const TAB_NAMES = { overview:'Overview', school:'School', health:'Health', projects:'Projects', problems:'Problems', notes:'Notes' };
 
 // ── Render functions ──
 
@@ -1523,6 +1545,7 @@ function setProblemStatus(id, status) {
   applyProblemStatus(item, status);
   save('problems');
   renderProblems();
+  renderOverview();
 }
 function setProblemFilter(filter) {
   currentProblemFilter = filter;
@@ -1917,8 +1940,97 @@ function deleteActivityLog(logId) {
   renderActivities();
 }
 
+/* ── Overview — everything prioritized across tabs ──
+   Shows: pinned items everywhere, plus Priority-status exams/labs & problems.
+   Redo / Done / Later / Archived items do NOT appear. */
+const OVERVIEW_SECTIONS = [
+  { section: 'exams',      tab: 'school',   label: 'Exams',            icon: 'fa-file-pen' },
+  { section: 'labs',       tab: 'school',   label: 'Labs',             icon: 'fa-flask' },
+  { section: 'rehab',      tab: 'health',   label: 'Rehab Exercises',  icon: 'fa-hand-holding-heart' },
+  { section: 'motion',     tab: 'health',   label: 'Motion Goals',     icon: 'fa-person-walking' },
+  { section: 'physics',    tab: 'health',   label: 'Gym Exercises',    icon: 'fa-dumbbell' },
+  { section: 'activities', tab: 'health',   label: 'Activity Tracker', icon: 'fa-chart-line' },
+  { section: 'business',   tab: 'projects', label: 'Business',         icon: 'fa-briefcase' },
+  { section: 'cs',         tab: 'projects', label: 'CS Projects',      icon: 'fa-code' },
+  { section: 'rules',      tab: 'problems', label: 'Rules',            icon: 'fa-list-check' },
+  { section: 'problems',   tab: 'problems', label: 'Problems',         icon: 'fa-triangle-exclamation' }
+];
+
+function overviewPriorityOf(section, item) {
+  if (section === 'exams' || section === 'labs') return isPinned(section, item.id) || item.status === 'priority';
+  if (section === 'problems') return item.status === 'priority';
+  return isPinned(section, item.id);
+}
+
+function overviewRow(section, tab, item) {
+  let meta = '';
+  if (section === 'exams' || section === 'labs') {
+    if (item.date) {
+      const days = daysUntil(item.date);
+      meta = `<div class="item-sub">${escHtml(item.date)} · <span class="countdown ${countdownClass(days)}">${countdownLabel(days)}</span></div>`;
+    }
+  } else if (section === 'physics') {
+    meta = `<div class="item-sub">${item.sets} sets · ${item.reps} reps · ${item.weight} kg</div>`;
+  } else if (section === 'problems') {
+    meta = '<div class="item-sub">Priority problem</div>';
+  } else if (section === 'activities') {
+    const logs = getActivityLogs(item.id);
+    meta = `<div class="item-sub">${logs.length} ${logs.length === 1 ? 'entry' : 'entries'}</div>`;
+  }
+
+  const badge = (section === 'exams' || section === 'labs') ? schoolStatusBadge(item)
+    : section === 'problems' ? '<span class="prob-status-badge priority"><i class="fa-solid fa-star"></i>Priority</span>'
+    : '';
+
+  return `
+    <div class="overview-item" data-action="goto-tab" data-tab="${tab}">
+      <div class="item-main">
+        <span class="item-title">${escHtml(item.title)}</span>
+        ${meta}
+      </div>
+      ${badge}
+      <i class="fa-solid fa-chevron-right overview-go"></i>
+    </div>`;
+}
+
+function renderOverview() {
+  const listEl = document.getElementById('list-overview');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  let html = '';
+  let total = 0;
+  OVERVIEW_SECTIONS.forEach(({ section, tab, label, icon }) => {
+    const items = (data[section] || []).filter(item => overviewPriorityOf(section, item));
+    if (!items.length) return;
+    total += items.length;
+    html += `
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="fa-solid ${icon}"></i> ${label}</span>
+          <span class="group-count">${items.length}</span>
+        </div>
+        <div class="list-body">${items.map(item => overviewRow(section, tab, item)).join('')}</div>
+      </div>`;
+  });
+
+  if (!total) {
+    listEl.innerHTML = `
+      <div class="section-card">
+        <div class="overview-empty">
+          <i class="fa-solid fa-star"></i>
+          <div class="oe-title">Nothing prioritized yet</div>
+          <div class="oe-sub">Tap the ⭐ star on any item to pin it, or set a Priority status in edit mode. Prioritized items will show up here.</div>
+        </div>
+      </div>`;
+    return;
+  }
+  listEl.innerHTML = html;
+}
+
 /* Render all */
 function renderAll() {
+  renderOverview();
   renderExams();
   renderLabs();
   renderActivities();
@@ -2072,6 +2184,7 @@ function renderSection(section) {
     case 'problems': renderProblems(); break;
     case 'rules':    renderSimpleList('rules', document.getElementById('list-rules')); break;
   }
+  renderOverview();
 }
 
 // ── Delete ──
@@ -2294,6 +2407,7 @@ function triagePick(status) {
     applyProblemStatus(item, status);
     save('problems');
   }
+  renderOverview();
   triageAdvance();
 }
 
@@ -2306,6 +2420,7 @@ function triageDelete() {
     save('problems');
     save('probNotes');
   }
+  renderOverview();
   triageAdvance();
 }
 
@@ -2369,6 +2484,7 @@ document.getElementById('content').addEventListener('click', e => {
   if (action === 'add')    { openModal(section); return; }
   if (action === 'add-activity') { addActivity(); return; }
   if (action === 'edit')   { openModal(section, id); return; }
+  if (action === 'goto-tab') { switchTab(btn.dataset.tab); return; }
   if (action === 'delete') { deleteItem(section, id); return; }
   if (action === 'pin')    { togglePin(section, id); return; }
   if (action === 'set-school-status') {
@@ -2439,7 +2555,7 @@ modalFields.addEventListener('keydown', e => { if (e.key === 'Enter') confirmAdd
 backBtn.addEventListener('click', closeProblemEditor);
 
 // ── Refresh countdown every minute ──
-setInterval(() => { if (currentTab === 'school') renderExams(); }, 60000);
+setInterval(() => { if (currentTab === 'school') renderExams(); if (currentTab === 'overview') renderOverview(); }, 60000);
 // ── Notifications (while the app is running) ──
 const notifOverlay = document.getElementById('notif-overlay');
 
