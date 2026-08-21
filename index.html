@@ -1468,6 +1468,7 @@ function countdownLabel(days) {
 
 // ── DOM references ──
 const editBtn       = document.getElementById('edit-btn');
+const settingsBtn   = document.getElementById('settings-btn');
 const tabTitle      = document.getElementById('tab-title');
 const bottomNav     = document.getElementById('bottom-nav');
 const modalOverlay  = document.getElementById('modal-overlay');
@@ -2146,8 +2147,10 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   tabTitle.textContent = TAB_NAMES[tab];
   setEditMode(false);  // exit edit mode on tab switch
-  // No editing on the read-only Overview tab — hide the pen
-  editBtn.style.display = (tab === 'overview') ? 'none' : '';
+  // Overview is read-only (no pen) and hosts the Settings gear; other tabs are the opposite
+  const isOverview = (tab === 'overview');
+  editBtn.style.display    = isOverview ? 'none' : '';
+  settingsBtn.style.display = isOverview ? '' : 'none';
   document.getElementById('content').scrollTop = 0;
 }
 
@@ -2910,8 +2913,9 @@ if (urlParams.get('tab') && TAB_NAMES[urlParams.get('tab')]) switchTab(urlParams
 notifCheck();
 setInterval(notifCheck, 60000);
 renderAll();
-// Overview is the default tab and is read-only — no pen
+// Overview is the default tab — it shows the Settings gear (no pen)
 editBtn.style.display = 'none';
+settingsBtn.style.display = '';
 
 // ── Android back-gesture / History API ──
 // On Android, the edge-swipe back gesture triggers a popstate event.
