@@ -1278,7 +1278,7 @@
       </div>
 
       <button id="notif-test" class="notif-test-btn"><i class="fa-solid fa-bell"></i> Send test notification</button>
-      <p class="notif-hint">Reminders fire while Life Manager is open or backgrounded on Android — not while the app is fully closed. To get closed-app reminders we'd need push notifications (requires your server).</p>
+      <p class="notif-hint">Reminders are delivered through the service worker, so they show up even while Life Manager is in the background. For reminders to fire, keep the app in your recent apps (don't swipe it away). Delivery while the app is fully closed would need push notifications (requires your server).</p>
     </div>
   </div>
 
@@ -2465,12 +2465,39 @@ function saveNotifPrefs(p) { LS.set('lm_notif_prefs', p); }
 
 function notifSupported() { return 'Notification' in window; }
 
-function sendNotif(title, body, tag) {
+// Service worker registration — powers reliable notifications via showNotification()
+let swReg = null;
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return Promise.resolve(null);
+  return navigator.serviceWorker.register('sw.js')
+    .then(reg => { swReg = reg; return navigator.serviceWorker.ready; })
+    .then(reg => { swReg = reg; return reg; })
+    .catch(() => { swReg = null; return null; });
+}
+
+// Listen for tab-switch requests from the service worker (notification taps)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.tab) switchTab(e.data.tab);
+  });
+}
+
+function sendNotif(title, body, tag, tab) {
   if (!notifSupported() || Notification.permission !== 'granted') return;
-  try {
-    const n = new Notification(title, { body, tag, icon: 'icon-192.png' });
-    n.onclick = () => { window.focus(); n.close(); };
-  } catch (e) {}
+  const options = { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: tag || undefined, data: { tag: tag || '', tab: tab || '' } };
+  if (swReg) {
+    swReg.showNotification(title, options).catch(() => {
+      try {
+        const n = new Notification(title, options);
+        n.onclick = () => { window.focus(); n.close(); };
+      } catch (e) {}
+    });
+  } else {
+    try {
+      const n = new Notification(title, options);
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) {}
+  }
 }
 
 function notifCheck() {
@@ -2487,7 +2514,7 @@ function notifCheck() {
       if (ex.status === 'done') return;
       const d = daysUntil(ex.date);
       if (d >= 0 && d <= prefs.exams.days) {
-        sendNotif('📚 Exam soon', ex.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + ex.id);
+        sendNotif('📚 Exam soon', ex.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + ex.id, 'school');
         fired.exams[ex.id] = true;
       }
     });
@@ -2496,7 +2523,7 @@ function notifCheck() {
       if (l.status === 'done') return;
       const d = daysUntil(l.date);
       if (d >= 0 && d <= prefs.exams.days) {
-        sendNotif('📚 Deadline soon', l.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + l.id);
+        sendNotif('📚 Deadline soon', l.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + l.id, 'school');
         fired.exams[l.id] = true;
       }
     });
@@ -2514,7 +2541,7 @@ function notifCheck() {
     const missing = [];
     data.rehab.forEach(r => { if (!todayChecks.rehab?.[r.id]) missing.push(r.title); });
     data.motion.forEach(m => { if (!todayChecks.motion?.[m.id]) missing.push(m.title); });
-    if (missing.length) sendNotif('💪 Daily health', 'Still to do today: ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? '…' : ''), 'health');
+    if (missing.length) sendNotif('💪 Daily health', 'Still to do today: ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? '…' : ''), 'health', 'health');
     fired.health = true;
   }
 
@@ -2529,14 +2556,14 @@ function notifCheck() {
     const body = overdue.length
       ? 'Overdue: ' + overdue.slice(0, 4).map(x => x.title).join(', ') + (overdue.length > 4 ? '…' : '') + ' — log them to catch up!'
       : 'Log any activities you did today to keep your tracker up to date.';
-    sendNotif('📊 Activity tracker', body, 'activity');
+    sendNotif('📊 Activity tracker', body, 'activity', 'health');
     fired.activity = true;
   }
 
   if (prefs.problems.on && !fired.problems) {
     const uncat = statusCounts().uncat;
     if (uncat > 0) {
-      sendNotif('🗂 Problem review', 'You have ' + uncat + ' uncategorized problem' + (uncat === 1 ? '' : 's') + ' — tap Review to triage them', 'problems');
+      sendNotif('🗂 Problem review', 'You have ' + uncat + ' uncategorized problem' + (uncat === 1 ? '' : 's') + ' — tap Review to triage them', 'problems', 'problems');
       fired.problems = true;
     }
   }
@@ -2756,6 +2783,12 @@ document.getElementById('import-file').addEventListener('change', e => {
 // ── Init ──
 // Remove leftover data from the removed AI feature
 ['lm_ai_key','lm_ai_provider','lm_ai_proxy_url','lm_ai_proxy_token','lm_ai_history','lm_ai_custom_prompt','lm_ai_access'].forEach(k => localStorage.removeItem(k));
+
+// Register service worker (reliable notifications) and open the tab a notification asked for
+registerServiceWorker();
+const urlParams = new URLSearchParams(location.search);
+if (urlParams.get('tab') && TAB_NAMES[urlParams.get('tab')]) switchTab(urlParams.get('tab'));
+
 notifCheck();
 setInterval(notifCheck, 60000);
 renderAll();
@@ -2847,12 +2880,5 @@ window.addEventListener('popstate', (e) => {
   │       a native app-like experience.              │
   └──────────────────────────────────────────────────┘
 -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    });
-  }
-</script>
 </body>
 </html>
