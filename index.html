@@ -107,19 +107,6 @@
     scroll-behavior: smooth;
   }
 
-  /* AI tab overrides content padding */
-  #content:has(#tab-ai.active) {
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    padding-bottom: 0 !important;
-  }
-
-  #tab-ai.active {
-    flex: 1;
-    min-height: 0;
-  }
 
   /* ── Tabs ── */
   .tab-panel { display: none; }
@@ -980,268 +967,67 @@
   .fade-in { animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 
-  /* ── AI Tab ── */
-  .ai-tab-panel {
-    display: none;
-    flex-direction: column;
-    height: 100%;
-    padding: 0 !important;
-  }
-  .ai-tab-panel.active {
-    display: flex !important;
-  }
-
-  #ai-chat-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 14px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 0;
-  }
-
-  #chat-messages {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding-bottom: 10px;
-  }
-
-  .chat-msg {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    animation: fadeIn 0.2s ease;
-  }
-
-  .chat-msg.user { align-items: flex-end; }
-  .chat-msg.assistant { align-items: flex-start; }
-
-  .chat-bubble {
-    max-width: 85%;
-    padding: 10px 14px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .chat-msg.user .chat-bubble {
-    background: var(--accent);
-    color: #fff;
-    border-bottom-right-radius: 4px;
-  }
-
-  .chat-msg.assistant .chat-bubble {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-bottom-left-radius: 4px;
-  }
-
-  .chat-bubble h3 {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--accent2);
-    margin: 10px 0 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .chat-bubble h3:first-child { margin-top: 0; }
-  .chat-bubble ul { padding-left: 16px; margin: 4px 0; }
-  .chat-bubble li { margin-bottom: 3px; }
-  .chat-bubble strong { color: var(--accent2); }
-  .chat-bubble em { color: var(--amber); font-style: normal; }
-  .chat-bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
-
-  .chat-time {
-    font-size: 10px;
-    color: var(--text-muted);
-    padding: 0 4px;
-  }
-
-  .chat-typing {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 10px 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    border-bottom-left-radius: 4px;
-    width: fit-content;
-  }
-  .chat-typing span {
-    width: 7px; height: 7px;
-    background: var(--text-muted);
-    border-radius: 50%;
-    animation: typingBounce 1.2s infinite;
-  }
-  .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
-  .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes typingBounce {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-5px); opacity: 1; }
-  }
-
-  #ai-input-bar {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    padding: 10px 12px calc(var(--nav-h) + 10px);
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+  /* ── School status (exams & labs) ── */
+  .school-status-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.3px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 10px;
     flex-shrink: 0;
   }
+  .school-status-badge.priority { background: rgba(251,191,36,0.18);  color: var(--amber); }
+  .school-status-badge.redo     { background: rgba(248,113,113,0.18); color: var(--red); }
+  .school-status-badge.done     { background: rgba(52,211,153,0.18);  color: var(--green); }
 
-  #ai-input {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    color: var(--text);
-    font-size: 14px;
-    padding: 9px 14px;
-    outline: none;
-    resize: none;
-    font-family: inherit;
-    line-height: 1.4;
-    max-height: 100px;
-    overflow-y: auto;
-    transition: border-color var(--transition);
-  }
-  #ai-input:focus { border-color: var(--accent); }
-
-  #ai-send-btn {
-    width: 38px; height: 38px;
-    background: var(--accent);
-    color: #fff;
-    border: none; border-radius: 50%;
-    font-size: 14px; cursor: pointer;
+  .school-status-toggle { gap: 2px; }
+  .school-status-toggle button {
+    width: 26px; height: 26px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--surface2); color: var(--text-muted);
+    font-size: 11px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: opacity var(--transition), transform var(--transition);
-  }
-  #ai-send-btn:hover { opacity: 0.85; }
-  #ai-send-btn:active { transform: scale(0.92); }
-  #ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  #ai-clear-btn {
-    width: 34px; height: 34px;
-    background: var(--surface2);
-    color: var(--text-muted);
-    border: none; border-radius: 50%;
-    font-size: 13px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
     transition: background var(--transition), color var(--transition);
   }
-  #ai-clear-btn:hover { background: var(--border); color: var(--text); }
+  .school-status-toggle button:hover { background: var(--border); color: var(--text); }
+  .school-status-toggle button.priority.active { background: rgba(251,191,36,0.25);  color: var(--amber); }
+  .school-status-toggle button.redo.active     { background: rgba(248,113,113,0.25); color: var(--red); }
+  .school-status-toggle button.done.active     { background: rgba(52,211,153,0.25);  color: var(--green); }
 
-  #ai-access-btn {
-    width: 34px; height: 34px;
-    background: var(--surface2);
-    color: var(--text-muted);
-    border: none; border-radius: 50%;
-    font-size: 13px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+  /* Done items fade out a bit */
+  .list-item.status-done .item-title { color: var(--text-muted); text-decoration: line-through; }
+  .list-item.status-done .item-sub   { opacity: 0.6; }
+
+  /* ── Edit button (edit mode only) ── */
+  .edit-btn {
+    width: 28px; height: 28px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--surface2); color: var(--text-muted);
+    font-size: 12px; cursor: pointer;
+    align-items: center; justify-content: center;
     transition: background var(--transition), color var(--transition);
   }
-  #ai-access-btn:hover { background: var(--border); color: var(--text); }
-  #ai-access-btn.active { background: var(--accent); color: #fff; }
+  .edit-btn:hover { background: var(--border); color: var(--text); }
 
-  /* ── AI access toggles ── */
-  .access-option {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .access-option:last-child { border-bottom: none; }
-  .access-option-label {
-    display: flex; align-items: center; gap: 12px;
-    font-size: 14px; font-weight: 500;
-  }
-  .access-option-label > i { color: var(--text-muted); width: 20px; text-align: center; flex-shrink: 0; }
-  .access-option-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 400; }
-
-  .toggle {
-    position: relative;
-    width: 46px; height: 26px;
-    flex-shrink: 0;
-  }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle .slider {
-    position: absolute; inset: 0;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 26px;
+  /* ── Data backup (export / import) ── */
+  .data-actions { display: flex; gap: 10px; padding: 14px 16px; }
+  .data-btn {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 11px 0;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--surface2); color: var(--text);
+    font-size: 13px; font-weight: 700; font-family: inherit;
     cursor: pointer;
-    transition: background var(--transition), border-color var(--transition);
+    transition: background var(--transition), opacity var(--transition);
   }
-  .toggle .slider::before {
-    content: '';
-    position: absolute;
-    width: 18px; height: 18px;
-    left: 3px; top: 3px;
-    background: var(--text-muted);
-    border-radius: 50%;
-    transition: transform var(--transition), background var(--transition);
+  .data-btn:hover { background: var(--border); }
+  .data-btn.primary { background: var(--accent); color: #fff; }
+  .data-btn.primary:hover { opacity: 0.85; }
+  .import-label input { display: none; }
+  .data-hint {
+    padding: 0 16px 14px;
+    font-size: 12px; color: var(--text-muted); line-height: 1.5;
   }
-  .toggle input:checked + .slider {
-    background: rgba(108,99,255,0.35);
-    border-color: var(--accent);
-  }
-  .toggle input:checked + .slider::before {
-    transform: translateX(20px);
-    background: var(--accent2);
-  }
-
-  #ai-setup { padding: 16px; }
-
-  /* ── Confirmation card ── */
-  .confirm-card {
-    background: var(--surface2) !important;
-    border: 1px solid var(--accent) !important;
-    border-radius: 14px !important;
-    padding: 14px 16px !important;
-    max-width: none !important;
-  }
-  .confirm-header {
-    font-size: 11px; font-weight: 700;
-    letter-spacing: 0.8px; text-transform: uppercase;
-    color: var(--accent2); margin-bottom: 8px;
-  }
-  .confirm-action { font-size: 14px; margin-bottom: 4px; }
-  .confirm-detail {
-    font-size: 13px; color: var(--text-muted);
-    margin-bottom: 12px; margin-top: 4px;
-    font-family: monospace; background: var(--bg);
-    padding: 6px 10px; border-radius: 6px;
-    max-height: 200px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .confirm-btns { display: flex; gap: 8px; margin-top: 12px; }
-  .confirm-yes {
-    flex: 1; padding: 9px;
-    background: var(--accent); color: #fff;
-    border: none; border-radius: 8px;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  .confirm-yes:hover { opacity: 0.85; }
-  .confirm-no {
-    flex: 1; padding: 9px;
-    background: var(--surface); color: var(--text-muted);
-    border: 1px solid var(--border); border-radius: 8px;
-    font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: background 0.15s;
-  }
-  .confirm-no:hover { background: var(--border); color: var(--text); }
 </style>
 </head>
 <body>
@@ -1362,54 +1148,19 @@
     <div id="tab-notes" class="tab-panel">
       <div id="word-count">0 words</div>
       <textarea class="notes-area" id="notes-textarea" placeholder="Start typing your notes…"></textarea>
+      <!-- Data backup -->
+      <div class="section-card" style="margin-top:16px;">
+        <div class="section-header">
+          <span class="section-title">Data Backup</span>
+        </div>
+        <div class="data-actions">
+          <button id="export-btn" class="data-btn primary"><i class="fa-solid fa-download"></i> Export</button>
+          <label class="data-btn import-label"><i class="fa-solid fa-upload"></i> Import<input type="file" id="import-file" accept=".json,application/json"></label>
+        </div>
+        <div class="data-hint">Export saves everything to a JSON file you can keep or move to another device. Import replaces your current data with a backup file.</div>
+      </div>
     </div>
 
-    <!-- AI TAB -->
-    <div id="tab-ai" class="tab-panel ai-tab-panel">
-      <div id="ai-setup" style="display:none;">
-        <div class="section-card" style="margin-bottom:14px;">
-          <div class="section-header"><span class="section-title">🐋 DeepSeek Setup</span></div>
-          <div style="padding:16px;">
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">Enter the URL of your PHP proxy and the secret password you set in <strong style="color:var(--accent2)">proxy.php</strong></p>
-            <input id="proxy-url-input" type="url" placeholder="https://yourdomain.com/proxy.php" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:10px 12px;outline:none;font-family:inherit;margin-bottom:10px;">
-            <input id="proxy-token-input" type="password" placeholder="Your secret password" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;padding:10px 12px;outline:none;font-family:inherit;margin-bottom:10px;">
-            <button id="save-api-key" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;">Save & Start</button>
-          </div>
-        </div>
-      </div>
-      <div id="ai-instructions-panel" style="display:none;">
-        <div class="section-card" style="margin-bottom:14px;">
-          <div class="section-header"><span class="section-title">🧠 AI Instructions</span></div>
-          <div style="padding:16px;">
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">This controls the AI's tone, personality, and what it should focus on. Core app behavior (tool usage, formatting) always stays intact regardless of what you write here. Edit freely; leave blank and reset to restore the built-in default.</p>
-            <textarea id="ai-instructions-textarea" style="width:100%;min-height:240px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;padding:10px 12px;outline:none;font-family:inherit;margin-bottom:10px;resize:vertical;line-height:1.5;"></textarea>
-            <div style="display:flex;gap:8px;">
-              <button id="ai-instructions-save" style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
-              <button id="ai-instructions-reset" style="flex:1;padding:12px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;">Reset to Default</button>
-            </div>
-            <button id="ai-instructions-close" style="width:100%;margin-top:8px;padding:10px;background:transparent;color:var(--text-muted);border:none;font-size:13px;cursor:pointer;">Cancel</button>
-          </div>
-        </div>
-      </div>
-      <div id="ai-access-panel" style="display:none;">
-        <div class="section-card" style="margin-bottom:14px;">
-          <div class="section-header"><span class="section-title">🔐 AI Data Access</span></div>
-          <div style="padding:4px 16px 8px;">
-            <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;line-height:1.5;">When a section is off, the AI can't <strong style="color:var(--text)">see</strong> its data or <strong style="color:var(--text)">edit/delete</strong> items in it. It can still <strong style="color:var(--green)">create</strong> new items anywhere.</p>
-            <div id="ai-access-options"></div>
-          </div>
-        </div>
-      </div>
-      <div id="ai-chat-area">
-        <div id="chat-messages"></div>
-      </div>
-      <div id="ai-input-bar">
-        <button id="ai-clear-btn" title="Clear chat"><i class="fa-solid fa-arrow-rotate-left"></i></button>
-        <button id="ai-access-btn" title="AI data access"><i class="fa-solid fa-sliders"></i></button>
-        <textarea id="ai-input" placeholder="Ask me anything about your day…" rows="1"></textarea>
-        <button id="ai-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
-      </div>
-    </div>
 
   </main>
 
@@ -1420,7 +1171,6 @@
     <button class="nav-btn" data-tab="projects"><i class="fa-solid fa-diagram-project"></i>Projects</button>
     <button class="nav-btn" data-tab="problems"><i class="fa-solid fa-triangle-exclamation"></i>Problems</button>
     <button class="nav-btn" data-tab="notes"><i class="fa-solid fa-note-sticky"></i>Notes</button>
-    <button class="nav-btn" data-tab="ai"><i class="fa-solid fa-robot"></i>AI</button>
   </nav>
 
   <!-- Problem full-page editor -->
@@ -1725,7 +1475,7 @@ let autosaveTimer = null;
 let currentProblemFilter = 'all';  // 'all' | 'priority' | 'later' | 'archived'
 
 // Tab display names
-const TAB_NAMES = { school:'School', health:'Health', projects:'Projects', problems:'Problems', notes:'Notes', ai:'AI Assistant' };
+const TAB_NAMES = { school:'School', health:'Health', projects:'Projects', problems:'Problems', notes:'Notes' };
 
 // ── Render functions ──
 
@@ -1782,6 +1532,38 @@ function setProblemFilter(filter) {
   renderProblems();
 }
 
+// ── School status (exams & labs) ──
+const SCHOOL_STATUS = {
+  priority: { label: 'Priority', icon: 'fa-star',         cls: 'priority' },
+  redo:     { label: 'Redo',     icon: 'fa-rotate-right', cls: 'redo' },
+  done:     { label: 'Done',     icon: 'fa-check',        cls: 'done' }
+};
+function schoolStatusOf(item) { return (item.status && SCHOOL_STATUS[item.status]) ? item.status : ''; }
+function setSchoolStatus(section, id, status) {
+  const item = data[section].find(x => x.id === id);
+  if (!item) return;
+  if (status === '' || status === 'none') delete item.status;
+  else item.status = status;
+  save(section);
+  renderSection(section);
+}
+function schoolStatusBadge(item) {
+  const s = schoolStatusOf(item);
+  if (!s) return '';
+  return `<span class="school-status-badge ${SCHOOL_STATUS[s].cls}"><i class="fa-solid ${SCHOOL_STATUS[s].icon}"></i>${SCHOOL_STATUS[s].label}</span>`;
+}
+function schoolStatusToggle(section, item) {
+  const s = schoolStatusOf(item);
+  return `<div class="school-status-toggle edit-ctrl">
+    <button class="priority${s === 'priority' ? ' active' : ''}" data-action="set-school-status" data-status="priority" data-section="${section}" data-id="${item.id}" title="Priority"><i class="fa-solid fa-star"></i></button>
+    <button class="redo${s === 'redo' ? ' active' : ''}" data-action="set-school-status" data-status="redo" data-section="${section}" data-id="${item.id}" title="Redo (might fail)"><i class="fa-solid fa-rotate-right"></i></button>
+    <button class="done${s === 'done' ? ' active' : ''}" data-action="set-school-status" data-status="done" data-section="${section}" data-id="${item.id}" title="Done (not graded yet)"><i class="fa-solid fa-check"></i></button>
+  </div>`;
+}
+function editBtnHtml(section, id) {
+  return `<button class="edit-btn edit-ctrl" data-action="edit" data-section="${section}" data-id="${id}" title="Edit"><i class="fa-solid fa-pen"></i></button>`;
+}
+
 /* Generic simple list (business, cs) */
 function renderSimpleList(section, listEl) {
   const items = sortPinned(section, data[section]);
@@ -1797,6 +1579,7 @@ function renderSimpleList(section, listEl) {
       <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
       ${pinBtn(section, item.id)}
       <div class="item-main"><span class="item-title">${escHtml(item.title)}</span></div>
+      ${editBtnHtml(section, item.id)}
       <button class="delete-btn" data-action="delete" data-section="${section}" data-id="${item.id}" title="Delete">
         <i class="fa-solid fa-trash"></i>
       </button>`;
@@ -1813,8 +1596,9 @@ function renderLabs() {
   if (!items.length) { listEl.innerHTML = emptyState('Nothing here yet'); return; }
   items.forEach(item => {
     const pinned = isPinned('labs', item.id);
+    const status = schoolStatusOf(item);
     const div = document.createElement('div');
-    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
+    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '') + (status === 'done' ? ' status-done' : '');
     div.dataset.id = item.id;
     div.dataset.section = 'labs';
     let deadlineBadge = '';
@@ -1825,11 +1609,14 @@ function renderLabs() {
     div.innerHTML = `
       <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
       ${pinBtn('labs', item.id)}
+      ${schoolStatusToggle('labs', item)}
       <div class="item-main">
         <span class="item-title">${escHtml(item.title)}</span>
         ${item.date ? `<div class="item-sub">${item.date}</div>` : ''}
       </div>
+      ${schoolStatusBadge(item)}
       ${deadlineBadge}
+      ${editBtnHtml('labs', item.id)}
       <button class="delete-btn" data-action="delete" data-section="labs" data-id="${item.id}" title="Delete">
         <i class="fa-solid fa-trash"></i>
       </button>`;
@@ -1847,18 +1634,22 @@ function renderExams() {
     const days   = daysUntil(item.date);
     const cls    = countdownClass(days);
     const pinned = isPinned('exams', item.id);
+    const status = schoolStatusOf(item);
     const div    = document.createElement('div');
-    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '');
+    div.className = 'list-item fade-in' + (pinned ? ' pinned' : '') + (status === 'done' ? ' status-done' : '');
     div.dataset.id = item.id;
     div.dataset.section = 'exams';
     div.innerHTML = `
       <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
       ${pinBtn('exams', item.id)}
+      ${schoolStatusToggle('exams', item)}
       <div class="item-main">
         <div class="item-title">${escHtml(item.title)}</div>
         <div class="item-sub">${item.date}</div>
       </div>
+      ${schoolStatusBadge(item)}
       <span class="countdown ${cls}">${countdownLabel(days)}</span>
+      ${editBtnHtml('exams', item.id)}
       <button class="delete-btn" data-action="delete" data-section="exams" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>`;
     listEl.appendChild(div);
   });
@@ -1883,6 +1674,7 @@ function renderChecklist(section) {
       ${pinBtn(section, item.id)}
       <input type="checkbox" id="chk-${item.id}" data-section="${section}" data-id="${item.id}" ${checked ? 'checked' : ''}>
       <label for="chk-${item.id}">${escHtml(item.title)}</label>
+      ${editBtnHtml(section, item.id)}
       <button class="delete-btn" data-action="delete" data-section="${section}" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>`;
     listEl.appendChild(div);
   });
@@ -1916,6 +1708,7 @@ function renderPhysics() {
           </div>
         </div>
         <button class="log-btn" data-action="log" data-id="${ex.id}">Log</button>
+        ${editBtnHtml('physics', ex.id)}
         <button class="delete-btn" data-action="delete" data-section="physics" data-id="${ex.id}"><i class="fa-solid fa-trash"></i></button>
       </div>
       <div class="exercise-history">${histHtml}</div>`;
@@ -1990,6 +1783,7 @@ function problemRow(item) {
         <span class="item-title">${escHtml(item.title)}</span>${hasNotes ? '<span class="notes-badge">Has notes</span>' : ''}
       </div>
       ${badge}
+      ${editBtnHtml('problems', item.id)}
       <button class="delete-btn" data-action="delete" data-section="problems" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>
     </div>`;
 }
@@ -2032,6 +1826,7 @@ function renderActivities() {
       </div>
       ${activityStatsHtml(act)}
       ${activityBadge(act)}
+      ${editBtnHtml('activities', act.id)}
       <button class="history-btn" data-action="open-activity" data-id="${act.id}" title="View history"><i class="fa-solid fa-clock-rotate-left"></i></button>
       <button class="delete-btn" data-action="delete" data-section="activities" data-id="${act.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
     listEl.appendChild(div);
@@ -2299,8 +2094,9 @@ function logExercise(id) {
   renderPhysics();
 }
 
-// ── Modal for adding ──
+// ── Modal for adding / editing ──
 let pendingSection = null;
+let pendingEditId  = null;
 
 const MODAL_CONFIGS = {
   exams:    { title: 'Add Exam',      fields: [{ id:'title', label:'Title', type:'text', placeholder:'e.g. Calculus Final' }, { id:'date', label:'Date', type:'date' }] },
@@ -2317,13 +2113,17 @@ const MODAL_CONFIGS = {
   cs:       { title: 'Add Project',   fields: [{ id:'title', label:'Title', type:'text', placeholder:'' }] },
   problems: { title: 'Add Problem',   fields: [{ id:'title', label:'Problem', type:'text', placeholder:'' }] },
   rules:    { title: 'Add Rule',      fields: [{ id:'title', label:'Rule', type:'text', placeholder:'e.g. No phone after 10pm' }] },
+  activities: { title: 'Edit Activity', fields: [{ id:'title', label:'Activity name', type:'text', placeholder:'' }] },
 };
 
-function openModal(section) {
+function openModal(section, editId) {
   pendingSection = section;
+  pendingEditId  = editId || null;
   const cfg = MODAL_CONFIGS[section];
   if (!cfg) return;
-  modalTitle.textContent = cfg.title;
+  const editing = !!pendingEditId;
+  modalTitle.textContent = editing ? 'Edit ' + cfg.title.replace(/^Add\s+/, '') : cfg.title;
+  modalConfirm.textContent = editing ? 'Save' : 'Add';
 
   // Build fields — pair sets/reps/weight in a row
   let html = '';
@@ -2343,6 +2143,18 @@ function openModal(section) {
     }
   }
   modalFields.innerHTML = html;
+
+  // Pre-fill values when editing
+  if (editing) {
+    const item = data[section].find(x => x.id === editId);
+    if (item) {
+      cfg.fields.forEach(f => {
+        const el = document.getElementById('mf-' + f.id);
+        if (el && item[f.id] !== undefined && item[f.id] !== null) el.value = item[f.id];
+      });
+    }
+  }
+
   modalOverlay.classList.add('open');
   // focus first input
   setTimeout(() => { const first = modalFields.querySelector('input'); if (first) first.focus(); }, 250);
@@ -2360,12 +2172,15 @@ function fieldHtml(f) {
 function closeModal() {
   modalOverlay.classList.remove('open');
   pendingSection = null;
+  pendingEditId  = null;
 }
 
 function confirmAdd() {
   if (!pendingSection) return;
   const cfg = MODAL_CONFIGS[pendingSection];
-  const item = { id: uid() };
+  const editing  = !!pendingEditId;
+  const existing = editing ? data[pendingSection].find(x => x.id === pendingEditId) : null;
+  const item     = existing || { id: uid() };
   let valid = true;
 
   cfg.fields.forEach(f => {
@@ -2373,12 +2188,13 @@ function confirmAdd() {
     const val = el ? el.value.trim() : '';
     if (f.type === 'text' && !val && !f.optional) { valid = false; el && el.focus(); return; }
     if (f.type === 'number') item[f.id] = parseFloat(val) || 0;
-    else if (val) item[f.id] = val;  // only set if non-empty (handles optional date)
+    else if (val) item[f.id] = val;       // set if non-empty (handles optional date)
+    else delete item[f.id];               // field cleared — remove it (e.g. lab deadline removed)
   });
 
   if (!valid) return;
 
-  data[pendingSection].push(item);
+  if (!existing) data[pendingSection].push(item);
   save(pendingSection);
   renderSection(pendingSection);
   closeModal();
@@ -2552,8 +2368,15 @@ document.getElementById('content').addEventListener('click', e => {
 
   if (action === 'add')    { openModal(section); return; }
   if (action === 'add-activity') { addActivity(); return; }
+  if (action === 'edit')   { openModal(section, id); return; }
   if (action === 'delete') { deleteItem(section, id); return; }
   if (action === 'pin')    { togglePin(section, id); return; }
+  if (action === 'set-school-status') {
+    const cur = data[section].find(x => x.id === id);
+    const next = (cur && cur.status === btn.dataset.status) ? '' : btn.dataset.status;
+    setSchoolStatus(section, id, next);
+    return;
+  }
   if (action === 'set-status-btn') {
     const cur = data.problems.find(p => p.id === id);
     const next = (cur && cur.status === btn.dataset.status) ? '' : btn.dataset.status;
@@ -2603,11 +2426,7 @@ bottomNav.addEventListener('click', e => {
 
 // ── Edit btn ──
 editBtn.addEventListener('click', () => {
-  if (currentTab === 'ai') {
-    AI.openInstructionsPanel();
-  } else {
-    setEditMode(!editMode);
-  }
+  setEditMode(!editMode);
 });
 
 // ── Modal ──
@@ -2665,6 +2484,7 @@ function notifCheck() {
   if (prefs.exams.on) {
     data.exams.forEach(ex => {
       if (fired.exams[ex.id]) return;
+      if (ex.status === 'done') return;
       const d = daysUntil(ex.date);
       if (d >= 0 && d <= prefs.exams.days) {
         sendNotif('📚 Exam soon', ex.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + ex.id);
@@ -2673,6 +2493,7 @@ function notifCheck() {
     });
     data.labs.forEach(l => {
       if (!l.date || fired.exams[l.id]) return;
+      if (l.status === 'done') return;
       const d = daysUntil(l.date);
       if (d >= 0 && d <= prefs.exams.days) {
         sendNotif('📚 Deadline soon', l.title + (d === 0 ? ' is today!' : ' is in ' + d + (d === 1 ? ' day' : ' days')), 'exam-' + l.id);
@@ -2866,9 +2687,75 @@ notifOverlay.addEventListener('input', e => {
 
 document.getElementById('notif-btn').addEventListener('click', openNotif);
 
+// ── Export / Import (data backup) ──
+const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','business','cs','problems','rules','notes','checks','physLogs','probNotes','activities','activityLogs'];
 
+function buildBackup() {
+  const payload = {
+    app: 'LifeManager',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: {},
+    pins: LS.get('lm_pins', {}),
+    notifPrefs: loadNotifPrefs()
+  };
+  BACKUP_KEYS.forEach(k => { payload.data[k] = data[k]; });
+  return payload;
+}
+
+function exportData() {
+  const payload = buildBackup();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'life-manager-backup-' + TODAY() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let payload;
+    try { payload = JSON.parse(reader.result); }
+    catch { alert('That file is not valid JSON.'); return; }
+
+    if (!payload || payload.app !== 'LifeManager' || !payload.data || typeof payload.data !== 'object') {
+      alert('That doesn\u2019t look like a Life Manager backup file.');
+      return;
+    }
+    if (!confirm('Importing will replace ALL current data with the backup. Continue?')) return;
+
+    // Restore app data keys
+    BACKUP_KEYS.forEach(k => {
+      if (k in payload.data) { data[k] = payload.data[k]; save(k); }
+    });
+    // Restore pinned items
+    if (payload.pins && typeof payload.pins === 'object') LS.set('lm_pins', payload.pins);
+    // Restore notification preferences
+    if (payload.notifPrefs && typeof payload.notifPrefs === 'object') saveNotifPrefs(payload.notifPrefs);
+
+    renderAll();
+    updateNotifBell();
+    alert('Data imported successfully.');
+  };
+  reader.onerror = () => alert('Could not read that file.');
+  reader.readAsText(file);
+}
+
+document.getElementById('export-btn').addEventListener('click', exportData);
+document.getElementById('import-file').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) importData(f);
+  e.target.value = '';
+});
 
 // ── Init ──
+// Remove leftover data from the removed AI feature
+['lm_ai_key','lm_ai_provider','lm_ai_proxy_url','lm_ai_proxy_token','lm_ai_history','lm_ai_custom_prompt','lm_ai_access'].forEach(k => localStorage.removeItem(k));
 notifCheck();
 setInterval(notifCheck, 60000);
 renderAll();
@@ -2931,24 +2818,6 @@ window.addEventListener('popstate', (e) => {
     return;
   }
 
-  // Priority 3: if AI access panel is open, close it
-  const accessPanel = document.getElementById('ai-access-panel');
-  if (accessPanel && accessPanel.style.display === 'block') {
-    AI.closeAccessPanel();
-    _lastBackTime = 0;
-    pushBackGuard('base');
-    return;
-  }
-
-  // Priority 4: if instructions panel is open, close it
-  const instrPanel = document.getElementById('ai-instructions-panel');
-  if (instrPanel && instrPanel.style.display === 'block') {
-    AI.closeInstructionsPanel();
-    _lastBackTime = 0;
-    pushBackGuard('base');
-    return;
-  }
-
   // Nothing to close — double-swipe within 800ms to actually exit
   const now = Date.now();
   if (_lastBackTime && (now - _lastBackTime) < 800) {
@@ -2962,782 +2831,6 @@ window.addEventListener('popstate', (e) => {
   pushBackGuard('base');
 });
 
-/* =====================================================
-   AI ASSISTANT
-   ===================================================== */
-
-const AI = {
-  // Storage
-  getKey: () => localStorage.getItem('lm_ai_key') || '',
-  setKey: (k) => localStorage.setItem('lm_ai_key', k),
-  getProvider: () => localStorage.getItem('lm_ai_provider') || 'anthropic',
-  setProvider: (p) => localStorage.setItem('lm_ai_provider', p),
-  getProxyUrl: () => localStorage.getItem('lm_ai_proxy_url') || '',
-  setProxyUrl: (u) => localStorage.setItem('lm_ai_proxy_url', u),
-  getProxyToken: () => localStorage.getItem('lm_ai_proxy_token') || '',
-  setProxyToken: (t) => localStorage.setItem('lm_ai_proxy_token', t),
-  getHistory: () => { try { return JSON.parse(localStorage.getItem('lm_ai_history') || '[]'); } catch { return []; } },
-  setHistory: (h) => localStorage.setItem('lm_ai_history', JSON.stringify(h.slice(-30))),
-  getCustomPrompt: () => localStorage.getItem('lm_ai_custom_prompt') || '',
-  setCustomPrompt: (p) => localStorage.setItem('lm_ai_custom_prompt', p),
-  clearCustomPrompt: () => localStorage.removeItem('lm_ai_custom_prompt'),
-
-  // ── AI access controls ──
-  // Areas: school, health, projects, problems, notes. Default all ON for existing users.
-  ACCESS_DEFAULTS: { school: true, health: true, projects: true, problems: true, notes: true },
-  getAccess() {
-    try {
-      const raw = localStorage.getItem('lm_ai_access');
-      const parsed = raw ? JSON.parse(raw) : {};
-      return { ...this.ACCESS_DEFAULTS, ...parsed };
-    } catch { return { ...this.ACCESS_DEFAULTS }; }
-  },
-  setAccess(area, val) {
-    const access = this.getAccess();
-    access[area] = !!val;
-    localStorage.setItem('lm_ai_access', JSON.stringify(access));
-  },
-  canSee(area) { return !!this.getAccess()[area]; },
-  // Map a section name to its access area. 'notes' maps to notes; problem_notes maps to problems.
-  sectionArea(section) {
-    if (section === 'problem_notes') return 'problems';
-    return section; // exams, labs, rehab, motion, physics, activities, business, cs, problems, rules, notes
-  },
-  canEditSection(section) { return this.canSee(this.sectionArea(section)); },
-
-  // ── Keyword scoring — which sections does this message touch? ──
-  scoreMessage(msg) {
-    const m = msg.toLowerCase();
-    const scores = {
-      school:   0,
-      health:   0,
-      projects: 0,
-      problems: 0,
-      notes:    0,
-      general:  0,
-    };
-
-    // School
-    if (/exam|test|quiz|midterm|final|study|lecture|lab|assignment|deadline|due|grade|subject|course|class/.test(m)) scores.school += 2;
-    if (this.canSee('school') && data.exams.some(e => m.includes(e.title.toLowerCase()))) scores.school += 3;
-    if (this.canSee('school') && data.labs.some(l => m.includes(l.title.toLowerCase()))) scores.school += 3;
-
-    // Health
-    if (/rehab|physio|exercise|workout|gym|sets|reps|weight|kg|stretch|shoulder|knee|ankle|motion|steps|walk|stand|health|pain|injury|log/.test(m)) scores.health += 2;
-    if (this.canSee('health') && data.physics.some(e => m.includes(e.title.toLowerCase()))) scores.health += 3;
-    if (this.canSee('health') && data.rehab.some(r => m.includes(r.title.toLowerCase()))) scores.health += 3;
-    if (this.canSee('health') && data.activities.some(a => m.includes(a.title.toLowerCase()))) scores.health += 3;
-
-    // Projects
-    if (/project|business|startup|app|website|cs|code|coding|build|develop|launch|feature/.test(m)) scores.projects += 2;
-    if (this.canSee('projects') && data.business.some(b => m.includes(b.title.toLowerCase()))) scores.projects += 3;
-    if (this.canSee('projects') && data.cs.some(c => m.includes(c.title.toLowerCase()))) scores.projects += 3;
-
-    // Problems
-    if (/problem|issue|bug|error|stuck|fix|debug|trouble|challenge/.test(m)) scores.problems += 2;
-    if (this.canSee('problems') && data.problems.some(p => m.includes(p.title.toLowerCase()))) scores.problems += 3;
-
-    // Notes
-    if (/note|journal|wrote|write|ideas?|thought|reminder|summary/.test(m)) scores.notes += 2;
-
-    // Learning
-
-    // General / daily summary
-    if (/today|day|overview|summary|status|how am i|what should|plan|schedule|morning|evening|night/.test(m)) scores.general += 2;
-
-    return scores;
-  },
-
-  // Build context — only include sections relevant to the message AND granted access
-  buildContext(userMsg) {
-    const today = TODAY();
-    const scores = this.scoreMessage(userMsg || '');
-    const topScore = Math.max(...Object.values(scores));
-
-    // If nothing matched strongly, or it's a general query, send everything
-    const sendAll = topScore < 2 || scores.general >= 2;
-
-    // Decide which sections to include — always gated by user-granted access
-    const include = {
-      school:   (sendAll || scores.school >= 2)   && this.canSee('school'),
-      health:   (sendAll || scores.health >= 2)   && this.canSee('health'),
-      projects: (sendAll || scores.projects >= 2) && this.canSee('projects'),
-      problems: (sendAll || scores.problems >= 2) && this.canSee('problems'),
-      notes:    (sendAll || scores.notes >= 2)    && this.canSee('notes'),
-    };
-
-    const parts = [`TODAY: ${today}`];
-
-    if (include.school) {
-      const exams = data.exams.map(e => {
-        const d = daysUntil(e.date);
-        return `${e.title} (${d < 0 ? 'past' : d === 0 ? 'TODAY' : d + ' days'})`;
-      });
-      const labs = data.labs.map(l => l.title);
-      parts.push(`EXAMS & DEADLINES:\n${exams.length ? exams.join('\n') : 'None'}`);
-      parts.push(`LABS:\n${labs.length ? labs.join('\n') : 'None'}`);
-    }
-
-    if (include.health) {
-      const todayChecks = data.checks[today] || {};
-      const rehabDone = data.rehab.filter(r => todayChecks.rehab?.[r.id]).map(r => r.title);
-      const rehabTodo = data.rehab.filter(r => !todayChecks.rehab?.[r.id]).map(r => r.title);
-      const motionDone = data.motion.filter(m => todayChecks.motion?.[m.id]).map(m => m.title);
-      const motionTodo = data.motion.filter(m => !todayChecks.motion?.[m.id]).map(m => m.title);
-      const physLogs = data.physics.map(ex => {
-        const logs = data.physLogs[ex.id] || [];
-        const todayLog = logs.find(l => l.date === today);
-        return `${ex.title} (${ex.sets}×${ex.reps} @ ${ex.weight}kg)${todayLog ? ' ✓ logged today' : ''}`;
-      });
-      const actLines = data.activities.map(a => {
-        const logs = data.activityLogs[a.id] || [];
-        const latest = [...logs].sort((x, y) => (y.date || '').localeCompare(x.date || ''))[0];
-        return `${a.title}: ${latest ? latest.date + ' (' + relDateLabel(latest.date) + ')' : 'never'}`;
-      });
-      parts.push(`REHAB EXERCISES:\n- Done: ${rehabDone.join(', ') || 'none'}\n- Todo: ${rehabTodo.join(', ') || 'all done!'}`);
-      parts.push(`MOTION GOALS:\n- Done: ${motionDone.join(', ') || 'none'}\n- Todo: ${motionTodo.join(', ') || 'all done!'}`);
-      parts.push(`GYM EXERCISES:\n${physLogs.length ? physLogs.join('\n') : 'None set up'}`);
-      parts.push(`ACTIVITY TRACKER:\n${actLines.length ? actLines.join('\n') : 'None set up'}`);
-    }
-
-    if (include.projects) {
-      parts.push(`PROJECTS:\nBusiness: ${data.business.map(b => b.title).join(', ') || 'None'}\nCS: ${data.cs.map(c => c.title).join(', ') || 'None'}`);
-    }
-
-    if (include.problems) {
-      const probLines = data.problems.map(p => {
-        const s = problemStatusOf(p);
-        return s ? `${p.title} [${statusLabel(s)}]` : p.title;
-      });
-      parts.push(`PROBLEMS LIST (triage status in brackets: Priority / Get to / Archived; no brackets = Uncategorized):\n${probLines.join('\n') || 'None'}`);
-      parts.push(`RULES (things the user implements to combat their problems):\n${data.rules.map(r => r.title).join('\n') || 'None'}`);
-    }
-
-    if (include.notes) {
-      parts.push(`NOTES (excerpt):\n${data.notes ? data.notes.slice(0, 400) : 'Empty'}`);
-    }
-
-    return parts.join('\n\n');
-  },
-
-  // ── Access panel UI ──
-  ACCESS_OPTIONS: [
-    { area: 'school',   icon: 'fa-graduation-cap', label: 'School',        sub: 'Exams, labs' },
-    { area: 'health',   icon: 'fa-heart-pulse',    label: 'Health',        sub: 'Rehab, motion, gym, activity tracker' },
-    { area: 'projects', icon: 'fa-diagram-project',label: 'Projects',      sub: 'Business, CS projects' },
-    { area: 'problems', icon: 'fa-triangle-exclamation', label: 'Problems', sub: 'Problems, rules, problem notes' },
-    { area: 'notes',    icon: 'fa-note-sticky',    label: 'Notes',         sub: 'Main notes' },
-  ],
-  renderAccessPanel() {
-    const container = document.getElementById('ai-access-options');
-    if (!container) return;
-    const access = this.getAccess();
-    container.innerHTML = this.ACCESS_OPTIONS.map(o => `
-      <div class="access-option">
-        <div class="access-option-label">
-          <i class="fa-solid ${o.icon}"></i>
-          <div>
-            ${o.label}
-            <div class="access-option-sub">${o.sub}</div>
-          </div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" data-access-area="${o.area}" ${access[o.area] ? 'checked' : ''}>
-          <span class="slider"></span>
-        </label>
-      </div>`).join('');
-    container.querySelectorAll('input[data-access-area]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        this.setAccess(cb.dataset.accessArea, cb.checked);
-      });
-    });
-  },
-  closeAccessPanel() {
-    document.getElementById('ai-access-panel').style.display = 'none';
-    document.getElementById('ai-access-btn').classList.remove('active');
-    document.getElementById('ai-chat-area').style.display = '';
-    document.getElementById('ai-input-bar').style.display = '';
-  },
-
-  systemPrompt() {
-    const custom = this.getCustomPrompt();
-    const personal = (custom && custom.trim()) ? custom.trim() : this.defaultPersonalPrompt().trim();
-    const access = this.getAccess();
-    const accessList = Object.entries(access)
-      .map(([area, on]) => `${area.charAt(0).toUpperCase() + area.slice(1)}: ${on ? 'ACCESS granted (you can see and edit/delete)' : 'NO ACCESS — cannot see data, cannot update/delete items'}`)
-      .join('\n');
-    return this.corePrompt() + '\n\nUSER PREFERENCES:\n' + personal + '\n\nDATA ACCESS PERMISSIONS (set by the user in the app — respect them strictly):\n' + accessList + '\n\nACCESS RULES:\n- You can ALWAYS CREATE new items in any section, even ones with NO ACCESS.\n- You can only UPDATE or DELETE existing items in sections marked "ACCESS granted". Never attempt to update or delete items in NO ACCESS sections — instead tell the user you don\'t have access to that area.\n- Only sections with ACCESS granted will appear in your app data context.';
-  },
-
-  // ── Permission check — can the AI execute this edit request? ──
-  canExecute(args) {
-    const { action, section } = args;
-    // Creating items is always allowed anywhere.
-    if (action === 'add') return true;
-    // Appending to the main notes = adding content, allowed anywhere.
-    if (section === 'notes' && action === 'append') return true;
-    // Everything else (update, delete, replace notes, problem notes edits) requires access.
-    return this.canEditSection(section);
-  },
-
-  // ── FIXED — how the AI operates and how the app works. Not user-editable. ──
-  corePrompt() {
-    return `You are a personal AI assistant embedded in the user's Life Manager app.
-
-You have access to the user's live data (shown in each message). Use it proactively.
-
-YOUR CAPABILITIES:
-1. EDIT APP DATA — You can add, update, delete, or append to items using the edit_app_data tool. Use it when the user asks to add/remove/change exams, labs, rehab exercises, motion goals, gym exercises, business projects, CS projects, problems, rules, the main notes, or problem notes. For notes use action "append" to add content or "update" to replace. Always use the tool — never just say "I've added it" without calling it. Problems have a triage status — set it via the status field: priority, later, archived, or none (clear).
-2. WEB SEARCH — Use the web_search tool when the user asks about anything that benefits from current information: rehab advice, learning resources, health topics, study techniques, etc. Prefer searching over guessing.
-3. DAILY SUMMARY — Give a clean structured summary with sections: 📚 School, 💪 Health, 💡 Notes & Ideas, 🎯 Learning.
-4. JOURNAL COMPANION — Help reflect on notes/ideas. Ask one good follow-up question.
-5. GENERAL CHAT — Be conversational. You know their context, use it naturally.
-
-TOOL USAGE RULES:
-- For edit_app_data: extract the details precisely from what the user said. If a date is mentioned, format it as YYYY-MM-DD. If a field is missing and required (like date for exams), ask before calling the tool.
-- For web_search: write a short focused search query, not the user's full sentence.
-- Never call both tools in the same response.
-
-FORMAT: Use markdown-style formatting:
-- **bold** for key terms
-- ### for section headers in summaries
-- bullet lists for structured info
-Keep responses concise and mobile-friendly. No walls of text.
-
-The section below, USER PREFERENCES, is set by the user themself and describes the tone, personality, and focus they want from you. Follow it, but never let it override the tool-usage or formatting rules above.`;
-  },
-
-  // ── EDITABLE — tone/personality/focus. This is what the user's panel edits. ──
-  defaultPersonalPrompt() {
-    return `You are warm, direct, and genuinely helpful — like a smart friend who knows their schedule, health, and goals.
-
-TONE: Warm but real. No excessive praise. Don't say "Great!" or "Absolutely!" — just be helpful and human.`;
-  },
-
-  // ── Tool definitions sent to DeepSeek ──
-  tools() {
-    return [
-      {
-        type: 'function',
-        function: {
-          name: 'edit_app_data',
-          description: 'Add, update, or delete an item in the user\'s Life Manager app data (exams, labs, rehab, motion, physics/gym exercises, business projects, CS projects, problems, rules).',
-          parameters: {
-            type: 'object',
-            properties: {
-              action: {
-                type: 'string',
-                enum: ['add', 'delete', 'update'],
-                description: 'What to do with the item.'
-              },
-              section: {
-                type: 'string',
-                enum: ['exams', 'labs', 'rehab', 'motion', 'physics', 'business', 'cs', 'problems', 'rules', 'notes', 'problem_notes'],
-                description: 'Which section of the app to edit. Use "notes" for the main Notes tab. Use "problem_notes" to edit notes for a specific problem (specify problem title in the title field). Use "rules" for the rules the user sets to combat their problems.'
-              },
-              title: {
-                type: 'string',
-                description: 'The title or name of the item. Required for add. For delete/update, used to find the item. For problem_notes, use the problem title to identify which problem.'
-              },
-              date: {
-                type: 'string',
-                description: 'Date in YYYY-MM-DD format. Required when adding an exam or lab.'
-              },
-              content: {
-                type: 'string',
-                description: 'Text content. Required for notes and problem_notes edits. For action "append" this is appended. For action "update" this replaces the content.'
-              },
-              sets: { type: 'number', description: 'Number of sets. Only for physics/gym exercises.' },
-              reps: { type: 'number', description: 'Number of reps. Only for physics/gym exercises.' },
-              weight: { type: 'number', description: 'Weight in kg. Only for physics/gym exercises.' },
-              new_title: { type: 'string', description: 'New title when action is update.' },
-              new_date:  { type: 'string', description: 'New date (YYYY-MM-DD) when action is update.' },
-              status:    { type: 'string', enum: ['priority', 'later', 'archived', 'none'], description: 'Triage category for a problem: priority (focus on it), later (will get to it), archived (shelved), or none to clear the category. Only applies to problems.' },
-            },
-            required: ['action', 'section']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'web_search',
-          description: 'Search the web for current information. Use for health/rehab advice, learning resources, study tips, or any topic that benefits from up-to-date results.',
-          parameters: {
-            type: 'object',
-            properties: {
-              query: { type: 'string', description: 'Short focused search query (3-8 words).' }
-            },
-            required: ['query']
-          }
-        }
-      }
-    ];
-  },
-
-  async send(userMsg) {
-    const key = this.getKey();
-    if (!key) { this.showSetup(); return; }
-
-    const history = this.getHistory().slice(-10);
-    const context = this.buildContext(userMsg);
-
-    const messages = [
-      ...history.map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: `[App data — relevant sections only]\n${context}\n\n---\n${userMsg}` }
-    ];
-
-    const typingEl = this.addTyping();
-
-    try {
-      const proxyUrl   = this.getProxyUrl();
-      const proxyToken = this.getProxyToken();
-
-      const res = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Proxy-Token': proxyToken },
-        body: JSON.stringify({
-          model: 'deepseek-v4-flash',
-          max_tokens: 4000,
-          tools: this.tools(),
-          messages: [
-            { role: 'system', content: this.systemPrompt() },
-            ...messages
-          ]
-        })
-      });
-
-      typingEl.remove();
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          this.addMessage('assistant', '⚠️ Wrong proxy password or URL. Tap below to reconfigure.');
-          this.showSetup();
-        } else {
-          this.addMessage('assistant', `⚠️ Error ${res.status}: ${err.error?.message || res.statusText}`);
-        }
-        return;
-      }
-
-      const json         = await res.json();
-      const choice       = json.choices?.[0];
-      const finishReason = choice?.finish_reason;
-      const message      = choice?.message;
-
-      // ── Tool call response ──
-      if (finishReason === 'tool_calls' && message?.tool_calls?.length) {
-        const editCalls = message.tool_calls
-          .filter(tc => tc.function.name === 'edit_app_data')
-          .map(tc => JSON.parse(tc.function.arguments || '{}'));
-
-        if (editCalls.length > 0) {
-          this.showEditConfirmation(editCalls, userMsg);
-          return;
-        }
-
-        // web_search is handled server-side — shouldn't reach here
-        this.addMessage('assistant', '⚠️ Unexpected tool response. Please try again.');
-        return;
-      }
-
-      // ── Normal text response ──
-      const reply = message?.content || '(no response)';
-
-      const displayReply = reply;
-      await this.addMessageStreamed('assistant', displayReply);
-
-      const newHistory = [
-        ...this.getHistory(),
-        { role: 'user',      content: userMsg      },
-        { role: 'assistant', content: displayReply }
-      ];
-      this.setHistory(newHistory);
-
-    } catch(e) {
-      typingEl.remove();
-      this.addMessage('assistant', '⚠️ Could not reach the AI. Check your connection or proxy URL.');
-    }
-  },
-
-  // ── Build a human-readable summary of what the AI wants to do ──
-  describeEdit(args) {
-    const actionLabel = { add: 'Add', delete: 'Delete', update: 'Update', append: 'Append to' }[args.action] || args.action;
-    const sectionLabel = {
-      exams: 'Exams', labs: 'Labs', rehab: 'Rehab', motion: 'Motion Goals',
-      physics: 'Gym Exercises', business: 'Business Projects', cs: 'CS Projects',
-      problems: 'Problems', rules: 'Rules', notes: 'Notes', problem_notes: 'Problem Notes'
-    }[args.section] || args.section;
-    let detail = args.title || '';
-    if (args.date)      detail += ` — ${args.date}`;
-    if (args.sets)      detail += ` | ${args.sets}×${args.reps} @ ${args.weight}kg`;
-    if (args.new_title) detail += ` → rename to "${args.new_title}"`;
-    if (args.new_date)  detail += ` → new date ${args.new_date}`;
-    if (args.content)   detail += (detail ? ' | ' : '') + `"${args.content}"`;
-    return { actionLabel, sectionLabel, detail };
-  },
-
-  // ── Show a confirmation card in the chat ──
-  showEditConfirmation(argsArray, originalMsg) {
-    const msgs = document.getElementById('chat-messages');
-    const rows = argsArray.map(args => {
-      const { actionLabel, sectionLabel, detail } = this.describeEdit(args);
-      const blocked = !this.canExecute(args);
-      return `
-        <div class="confirm-action"><strong>${actionLabel}</strong> in <strong>${sectionLabel}</strong>${blocked ? ' <em style="color:var(--red)">(blocked — no AI access)</em>' : ''}</div>
-        ${detail ? `<div class="confirm-detail">${detail}</div>` : ''}`;
-    }).join('<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">');
-
-    const card = document.createElement('div');
-    card.className = 'chat-msg assistant';
-    card.innerHTML = `
-      <div class="chat-bubble confirm-card">
-        <div class="confirm-header">✏️ Confirm ${argsArray.length > 1 ? argsArray.length + ' edits' : 'edit'}</div>
-        ${rows}
-        <div class="confirm-btns">
-          <button class="confirm-yes">Yes, do it</button>
-          <button class="confirm-no">Cancel</button>
-        </div>
-      </div>`;
-    msgs.appendChild(card);
-    msgs.scrollTop = msgs.scrollHeight;
-    card.querySelector('.confirm-yes').addEventListener('click', () => {
-      card.remove();
-      const results = argsArray.map(args => this.executeSingleEdit(args)).join('\n');
-      this.addMessage('assistant', results);
-      const newHistory = [...this.getHistory(),
-        { role: 'user', content: originalMsg },
-        { role: 'assistant', content: results }
-      ];
-      this.setHistory(newHistory);
-    });
-    card.querySelector('.confirm-no').addEventListener('click', () => {
-      card.remove();
-      this.addMessage('assistant', 'No problem — edit cancelled.');
-      const newHistory = [...this.getHistory(),
-        { role: 'user', content: originalMsg },
-        { role: 'assistant', content: 'Edit cancelled by user.' }
-      ];
-      this.setHistory(newHistory);
-    });
-  },
-
-  // ── Execute a single edit against localStorage — returns result string ──
-  executeSingleEdit(args) {
-    const { action, section } = args;
-    let resultMsg = '';
-    try {
-      // Enforce access permissions — create/append allowed anywhere, modify/delete only with access.
-      if (!this.canExecute(args)) {
-        const area = this.sectionArea(section);
-        return `⛔ Blocked — you haven't granted the AI access to the ${area} area. Enable it in the AI Data Access panel (sliders icon) to allow edits there.`;
-      }
-
-      if (section === 'notes') {
-        if (action === 'append') {
-          data.notes = (data.notes ? data.notes + '\n\n' : '') + (args.content || '');
-        } else {
-          data.notes = args.content || '';
-        }
-        save('notes');
-        notesTA.value = data.notes;
-        updateWordCount();
-        resultMsg = `Done — notes ${action === 'append' ? 'updated' : 'replaced'}.`;
-
-      } else if (section === 'problem_notes') {
-        const prob = data.problems.find(p =>
-          p.title.toLowerCase().includes((args.title || '').toLowerCase())
-        );
-        if (!prob) {
-          resultMsg = `Couldn't find a problem matching "${args.title}".`;
-        } else {
-          const existing = data.probNotes[prob.id] || '';
-          data.probNotes[prob.id] = action === 'append'
-            ? (existing ? existing + '\n\n' : '') + (args.content || '')
-            : (args.content || '');
-          save('probNotes');
-          if (currentProblemId === prob.id) probTA.value = data.probNotes[prob.id];
-          resultMsg = `Done — notes for **${prob.title}** ${action === 'append' ? 'updated' : 'replaced'}.`;
-        }
-
-      } else if (action === 'add') {
-        const item = { id: uid(), title: args.title || 'Untitled' };
-        if (args.date !== undefined)   item.date   = args.date;
-        if (args.sets !== undefined)   item.sets   = args.sets;
-        if (args.reps !== undefined)   item.reps   = args.reps;
-        if (args.weight !== undefined) item.weight = args.weight;
-        if (args.status !== undefined) applyProblemStatus(item, args.status);
-        data[section].push(item);
-        save(section);
-        renderSection(section);
-        resultMsg = `Done — **${item.title}** added to ${section}.`;
-
-      } else if (action === 'delete') {
-        const before = data[section].length;
-        const removedItems = data[section].filter(x =>
-          x.title?.toLowerCase().includes((args.title || '').toLowerCase())
-        );
-        data[section] = data[section].filter(x =>
-          !x.title?.toLowerCase().includes((args.title || '').toLowerCase())
-        );
-        if (section === 'problems') {
-          removedItems.forEach(x => delete data.probNotes[x.id]);
-          save('probNotes');
-        }
-        const removed = before - data[section].length;
-        save(section);
-        renderSection(section);
-        resultMsg = removed > 0
-          ? `Done — removed ${removed} item(s) matching "${args.title}" from ${section}.`
-          : `Couldn't find "${args.title}" in ${section} — nothing deleted.`;
-
-      } else if (action === 'update') {
-        const item = data[section].find(x =>
-          x.title?.toLowerCase().includes((args.title || '').toLowerCase())
-        );
-        if (item) {
-          if (args.new_title !== undefined) item.title  = args.new_title;
-          if (args.new_date !== undefined)  item.date   = args.new_date;
-          if (args.sets !== undefined)      item.sets   = args.sets;
-          if (args.reps !== undefined)      item.reps   = args.reps;
-          if (args.weight !== undefined)    item.weight = args.weight;
-          if (args.status !== undefined)    applyProblemStatus(item, args.status);
-          save(section);
-          renderSection(section);
-          resultMsg = `Done — **${args.title}** updated in ${section}.`;
-        } else {
-          resultMsg = `Couldn't find "${args.title}" in ${section} to update.`;
-        }
-      }
-    } catch(e) {
-      resultMsg = `Something went wrong: ${e.message}`;
-    }
-    return resultMsg;
-  },
-
-  addMessage(role, text) {
-    const msgs = document.getElementById('chat-messages');
-    const div = document.createElement('div');
-    div.className = `chat-msg ${role}`;
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    // Convert markdown-ish to HTML
-    const html = this.renderMarkdown(text);
-
-    div.innerHTML = `<div class="chat-bubble">${html}</div><span class="chat-time">${time}</span>`;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-    document.getElementById('ai-chat-area').scrollTop = document.getElementById('ai-chat-area').scrollHeight;
-    return div;
-  },
-
-  // Reveals a full reply progressively so it feels like it's streaming in,
-  // even though it arrived from the proxy all at once. No network changes needed.
-  // Check if the user is near the bottom of the chat area — only auto-scroll
-  // during streaming when they haven't scrolled up to read earlier content.
-  _isNearBottom(el) {
-    return el.scrollHeight - el.scrollTop - el.clientHeight < 60;
-  },
-
-  addMessageStreamed(role, text) {
-    const msgs = document.getElementById('chat-messages');
-    const chatArea = document.getElementById('ai-chat-area');
-    const div = document.createElement('div');
-    div.className = `chat-msg ${role}`;
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    div.innerHTML = `<div class="chat-bubble"></div><span class="chat-time">${time}</span>`;
-    msgs.appendChild(div);
-    const bubble = div.querySelector('.chat-bubble');
-
-    return new Promise(resolve => {
-      const CHUNK = 3;       // characters revealed per tick
-      const DELAY = 12;      // ms between ticks
-      let i = 0;
-      const tick = () => {
-        i = Math.min(i + CHUNK, text.length);
-        bubble.innerHTML = this.renderMarkdown(text.slice(0, i));
-        // Only auto-scroll if user is near the bottom — don't yank them
-        // away from earlier messages they're trying to read.
-        if (this._isNearBottom(msgs)) {
-          msgs.scrollTop = msgs.scrollHeight;
-        }
-        if (this._isNearBottom(chatArea)) {
-          chatArea.scrollTop = chatArea.scrollHeight;
-        }
-        if (i < text.length) {
-          setTimeout(tick, DELAY);
-        } else {
-          resolve(div);
-        }
-      };
-      tick();
-    });
-  },
-
-  renderMarkdown(text) {
-    return text
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/### (.+)/g, '<h3>$1</h3>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-      .replace(/---/g, '<hr>')
-      .replace(/\n/g, '<br>');
-  },
-
-  addTyping() {
-    const msgs = document.getElementById('chat-messages');
-    const div = document.createElement('div');
-    div.className = 'chat-msg assistant';
-    div.innerHTML = `<div class="chat-typing"><span></span><span></span><span></span></div>`;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-    return div;
-  },
-
-  showSetup() {
-    document.getElementById('ai-setup').style.display = 'block';
-  },
-
-  hideSetup() {
-    document.getElementById('ai-setup').style.display = 'none';
-  },
-
-  init() {
-    const key = this.getKey();
-    if (!key) {
-      this.showSetup();
-    } else {
-      this.hideSetup();
-      // Show welcome if no history
-      const history = this.getHistory();
-      if (history.length === 0) {
-        this.send('Hello! Give me a quick overview of my day.');
-      } else {
-        // Replay last few messages
-        history.slice(-6).forEach(m => this.addMessage(m.role, m.content));
-      }
-    }
-
-    // Save button
-    document.getElementById('save-api-key').addEventListener('click', () => {
-      const url = document.getElementById('proxy-url-input').value.trim();
-      const token = document.getElementById('proxy-token-input').value.trim();
-      if (!url) { alert('Please enter your proxy URL'); return; }
-      this.setProxyUrl(url);
-      this.setProxyToken(token);
-      this.setKey('proxy');
-      this.hideSetup();
-      this.send('Hello! Give me a quick overview of my day.');
-    });
-
-    // Send button
-    document.getElementById('ai-send-btn').addEventListener('click', () => this.handleSend());
-
-    // Enter to send (shift+enter for newline)
-    document.getElementById('ai-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        this.handleSend();
-      }
-    });
-
-    // Auto-resize textarea
-    document.getElementById('ai-input').addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-    });
-
-    // Clear button
-    document.getElementById('ai-clear-btn').addEventListener('click', () => {
-      if (confirm('Clear chat history?')) {
-        this.setHistory([]);
-        document.getElementById('chat-messages').innerHTML = '';
-        this.send('Hello! Give me a fresh overview of my day.');
-      }
-    });
-
-    // AI Instructions panel — save, reset, close (opening is triggered by the header pen icon)
-    document.getElementById('ai-instructions-save').addEventListener('click', () => {
-      const text = document.getElementById('ai-instructions-textarea').value;
-      if (text.trim() && text.trim() !== this.defaultPersonalPrompt().trim()) {
-        this.setCustomPrompt(text);
-      } else {
-        this.clearCustomPrompt();
-      }
-      this.closeInstructionsPanel();
-    });
-
-    document.getElementById('ai-instructions-reset').addEventListener('click', () => {
-      this.clearCustomPrompt();
-      document.getElementById('ai-instructions-textarea').value = this.defaultPersonalPrompt();
-    });
-
-    document.getElementById('ai-instructions-close').addEventListener('click', () => this.closeInstructionsPanel());
-
-    // AI Access panel — open/close
-    document.getElementById('ai-access-btn').addEventListener('click', () => {
-      if (document.getElementById('ai-access-panel').style.display === 'block') {
-        this.closeAccessPanel();
-      } else {
-        this.openAccessPanel();
-      }
-    });
-
-  },
-
-  openInstructionsPanel() {
-    this.closeAccessPanel();
-    const current = this.getCustomPrompt();
-    document.getElementById('ai-instructions-textarea').value = current || this.defaultPersonalPrompt();
-    document.getElementById('ai-instructions-panel').style.display = 'block';
-    document.getElementById('ai-chat-area').style.display = 'none';
-    document.getElementById('ai-input-bar').style.display = 'none';
-  },
-
-  closeInstructionsPanel() {
-    document.getElementById('ai-instructions-panel').style.display = 'none';
-    document.getElementById('ai-chat-area').style.display = '';
-    document.getElementById('ai-input-bar').style.display = '';
-  },
-
-  openAccessPanel() {
-    this.closeInstructionsPanel();
-    this.renderAccessPanel();
-    document.getElementById('ai-access-panel').style.display = 'block';
-    document.getElementById('ai-access-btn').classList.add('active');
-    document.getElementById('ai-chat-area').style.display = 'none';
-    document.getElementById('ai-input-bar').style.display = 'none';
-  },
-
-  handleSend() {
-    const input = document.getElementById('ai-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-    input.value = '';
-    input.style.height = 'auto';
-    document.getElementById('ai-send-btn').disabled = true;
-    this.addMessage('user', msg);
-    this.send(msg).finally(() => {
-      document.getElementById('ai-send-btn').disabled = false;
-    });
-  }
-};
-
-// Init AI when tab is first opened
-let aiInitialized = false;
-const _origSwitchTab = switchTab;
-// Patch switchTab to init AI on first visit
-const origSwitchTab = switchTab;
-document.querySelectorAll('.nav-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    if (b.dataset.tab === 'ai' && !aiInitialized) {
-      aiInitialized = true;
-      setTimeout(() => AI.init(), 100);
-    }
-  });
-});
 </script>
 
 <!--
