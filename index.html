@@ -1942,8 +1942,8 @@ function deleteActivityLog(logId) {
 }
 
 /* ── Overview — everything prioritized across tabs ──
-   Shows: pinned items everywhere, plus Priority-status exams/labs & problems.
-   Redo / Done / Later / Archived items do NOT appear. */
+   Shows: pinned items everywhere, plus Priority-status exams/labs &
+   Priority + "Get to" problems. Redo / Done / Archived do NOT appear. */
 const OVERVIEW_SECTIONS = [
   { section: 'exams',      tab: 'school',   label: 'Exams',            icon: 'fa-file-pen' },
   { section: 'labs',       tab: 'school',   label: 'Labs',             icon: 'fa-flask' },
@@ -1959,7 +1959,7 @@ const OVERVIEW_SECTIONS = [
 
 function overviewPriorityOf(section, item) {
   if (section === 'exams' || section === 'labs') return isPinned(section, item.id) || item.status === 'priority';
-  if (section === 'problems') return item.status === 'priority';
+  if (section === 'problems') return item.status === 'priority' || item.status === 'later';
   return isPinned(section, item.id);
 }
 
@@ -1973,18 +1973,23 @@ function overviewRow(section, tab, item) {
   } else if (section === 'physics') {
     meta = `<div class="item-sub">${item.sets} sets · ${item.reps} reps · ${item.weight} kg</div>`;
   } else if (section === 'problems') {
-    meta = '<div class="item-sub">Priority problem</div>';
+    meta = '<div class="item-sub">' + PROBLEM_STATUS[item.status].label + ' problem</div>';
   } else if (section === 'activities') {
     const logs = getActivityLogs(item.id);
     meta = `<div class="item-sub">${logs.length} ${logs.length === 1 ? 'entry' : 'entries'}</div>`;
   }
 
   const badge = (section === 'exams' || section === 'labs') ? schoolStatusBadge(item)
-    : section === 'problems' ? '<span class="prob-status-badge priority"><i class="fa-solid fa-star"></i>Priority</span>'
+    : section === 'problems' ? `<span class="prob-status-badge ${PROBLEM_STATUS[item.status].cls}"><i class="fa-solid ${PROBLEM_STATUS[item.status].icon}"></i>${PROBLEM_STATUS[item.status].label}</span>`
     : '';
 
+  // Problems open their notes editor directly; everything else jumps to its tab
+  const rowAction = section === 'problems'
+    ? `data-action="open-problem" data-id="${item.id}"`
+    : `data-action="goto-tab" data-tab="${tab}"`;
+
   return `
-    <div class="overview-item" data-action="goto-tab" data-tab="${tab}">
+    <div class="overview-item" ${rowAction}>
       <div class="item-main">
         <span class="item-title">${escHtml(item.title)}</span>
         ${meta}
@@ -2021,7 +2026,7 @@ function renderOverview() {
         <div class="overview-empty">
           <i class="fa-solid fa-star"></i>
           <div class="oe-title">Nothing prioritized yet</div>
-          <div class="oe-sub">Tap the ⭐ star on any item to pin it, or set a Priority status in edit mode. Prioritized items will show up here.</div>
+          <div class="oe-sub">Tap the ⭐ star on any item to pin it, or set a Priority / Get to status in edit mode. Prioritized items will show up here.</div>
         </div>
       </div>`;
     return;
