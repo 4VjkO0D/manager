@@ -2008,6 +2008,10 @@ function renderOverview() {
   let total = 0;
   OVERVIEW_SECTIONS.forEach(({ section, tab, label, icon }) => {
     const items = (data[section] || []).filter(item => overviewPriorityOf(section, item));
+    // Priority problems always sit above "Get to" ones (stable sort keeps their internal order)
+    if (section === 'problems') {
+      items.sort((a, b) => (a.status === 'priority' ? 0 : 1) - (b.status === 'priority' ? 0 : 1));
+    }
     if (!items.length) return;
     total += items.length;
     html += `
