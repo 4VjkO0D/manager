@@ -1588,6 +1588,12 @@ function editBtnHtml(section, id) {
   return `<button class="edit-btn edit-ctrl" data-action="edit" data-section="${section}" data-id="${id}" title="Edit"><i class="fa-solid fa-pen"></i></button>`;
 }
 
+// School lists: pinned first, then everything else, and "Done" items always at the bottom
+function schoolSort(section, items) {
+  const pinned = sortPinned(section, items);
+  return [...pinned.filter(x => x.status !== 'done'), ...pinned.filter(x => x.status === 'done')];
+}
+
 /* Generic simple list (business, cs) */
 function renderSimpleList(section, listEl) {
   const items = sortPinned(section, data[section]);
@@ -1615,7 +1621,7 @@ function renderSimpleList(section, listEl) {
 /* Labs list — separate render to support optional deadline */
 function renderLabs() {
   const listEl = document.getElementById('list-labs');
-  const items  = sortPinned('labs', data.labs);
+  const items  = schoolSort('labs', data.labs);
   listEl.innerHTML = '';
   if (!items.length) { listEl.innerHTML = emptyState('Nothing here yet'); return; }
   items.forEach(item => {
@@ -1654,7 +1660,7 @@ function renderExams() {
   const listEl = document.getElementById('list-exams');
   listEl.innerHTML = '';
   if (!data.exams.length) { listEl.innerHTML = emptyState('No exams added'); return; }
-  sortPinned('exams', data.exams).forEach(item => {
+  schoolSort('exams', data.exams).forEach(item => {
     const days   = daysUntil(item.date);
     const cls    = countdownClass(days);
     const pinned = isPinned('exams', item.id);
