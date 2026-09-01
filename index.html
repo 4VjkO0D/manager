@@ -1293,6 +1293,16 @@
 
       <div class="section-card">
         <div class="section-header">
+          <span class="section-title">Overview</span>
+        </div>
+        <label class="notif-row">
+          <input type="checkbox" id="ov-getto">
+          <span><strong>🕑 Show "Get to" problems</strong><small>Also show Get-to problems on the Overview tab, below Priority ones</small></span>
+        </label>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
           <span class="section-title">Data Backup</span>
         </div>
         <div class="data-actions">
@@ -1963,9 +1973,11 @@ const OVERVIEW_SECTIONS = [
   { section: 'problems',   tab: 'problems', label: 'Problems',         icon: 'fa-triangle-exclamation' }
 ];
 
+function getOverviewGettoPref() { return LS.get('lm_overview_getto', true); }
+
 function overviewPriorityOf(section, item) {
   if (section === 'exams' || section === 'labs') return isPinned(section, item.id) || item.status === 'priority';
-  if (section === 'problems') return item.status === 'priority' || item.status === 'later';
+  if (section === 'problems') return item.status === 'priority' || (getOverviewGettoPref() && item.status === 'later');
   return isPinned(section, item.id);
 }
 
@@ -2751,6 +2763,9 @@ function renderNotifPanel() {
   document.getElementById('nf-health-cfg').style.display = prefs.health.on ? 'flex' : 'none';
   document.getElementById('nf-activity-cfg').style.display = prefs.activity.on ? 'flex' : 'none';
   document.getElementById('nf-activity-cfg2').style.display = prefs.activity.on ? 'flex' : 'none';
+
+  const ovGetto = document.getElementById('ov-getto');
+  if (ovGetto) ovGetto.checked = getOverviewGettoPref();
 }
 
 function notifSaveFeedback() {
@@ -2799,6 +2814,11 @@ settingsOverlay.addEventListener('click', e => {
 
 settingsOverlay.addEventListener('change', e => {
   const id = e.target.id;
+  if (id === 'ov-getto') {
+    LS.set('lm_overview_getto', e.target.checked);
+    renderOverview();
+    return;
+  }
   if (!id || !id.startsWith('nf-')) return;
   const prefs = loadNotifPrefs();
 
@@ -2860,7 +2880,8 @@ function buildBackup() {
     exportedAt: new Date().toISOString(),
     data: {},
     pins: LS.get('lm_pins', {}),
-    notifPrefs: loadNotifPrefs()
+    notifPrefs: loadNotifPrefs(),
+    overviewPrefs: { showGetto: getOverviewGettoPref() }
   };
   BACKUP_KEYS.forEach(k => { payload.data[k] = data[k]; });
   return payload;
@@ -2900,6 +2921,10 @@ function importData(file) {
     if (payload.pins && typeof payload.pins === 'object') LS.set('lm_pins', payload.pins);
     // Restore notification preferences
     if (payload.notifPrefs && typeof payload.notifPrefs === 'object') saveNotifPrefs(payload.notifPrefs);
+    // Restore overview preference (which problems appear on the Overview tab)
+    if (payload.overviewPrefs && typeof payload.overviewPrefs === 'object' && 'showGetto' in payload.overviewPrefs) {
+      LS.set('lm_overview_getto', !!payload.overviewPrefs.showGetto);
+    }
 
     renderAll();
     updateNotifIndicator();
