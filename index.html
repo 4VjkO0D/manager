@@ -1044,6 +1044,57 @@
   .overview-empty i { font-size: 34px; opacity: 0.4; margin-bottom: 12px; display: block; }
   .overview-empty .oe-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
   .overview-empty .oe-sub { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── Eat Out tracker ── */
+  .eatout-quick { display: flex; gap: 10px; padding: 12px 16px 6px; }
+  .eatout-quick-btn {
+    flex: 1;
+    padding: 14px 0;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--accent); color: #fff;
+    font-size: 15px; font-weight: 700; font-family: inherit;
+    cursor: pointer;
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  .eatout-quick-btn:hover { opacity: 0.9; }
+  .eatout-quick-btn:active { transform: scale(0.97); }
+  .eatout-quick-btn.alt { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .eatout-custom { display: flex; gap: 8px; padding: 8px 16px 12px; }
+  .eatout-custom input {
+    flex: 1; min-width: 0;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-size: 14px; padding: 9px 12px; outline: none; font-family: inherit;
+    transition: border-color var(--transition);
+  }
+  .eatout-custom input:focus { border-color: var(--accent); }
+  .eatout-custom button {
+    padding: 9px 18px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--accent); color: #fff;
+    font-size: 14px; font-weight: 700; font-family: inherit;
+    cursor: pointer; white-space: nowrap;
+    transition: opacity var(--transition);
+  }
+  .eatout-custom button:hover { opacity: 0.85; }
+  #eatout-summary { padding: 0 16px 8px; font-size: 13px; color: var(--text-muted); }
+  #eatout-summary strong { color: var(--text); }
+  .eat-amount { font-weight: 700; font-size: 13px; color: var(--green); flex-shrink: 0; }
+  .eat-row-edit, .eat-row-del {
+    width: 28px; height: 28px;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--transition), color var(--transition);
+  }
+  .eat-row-edit { background: var(--surface2); color: var(--text-muted); }
+  .eat-row-edit:hover { background: var(--border); color: var(--text); }
+  .eat-row-del { background: rgba(248,113,113,0.12); color: var(--red); }
+  .eat-row-del:hover { background: rgba(248,113,113,0.25); color: var(--red); }
+  .eat-edit-row { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .eat-edit-row .amount-line { display: flex; gap: 6px; }
+  .eat-edit-row .amount-line input[type="number"] { flex: 1; min-width: 0; }
 </style>
 </head>
 <body>
@@ -1093,6 +1144,22 @@
           <button class="add-btn" data-action="add-activity"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
         <div class="list-body" id="list-activities"></div>
+      </div>
+      <!-- Eat Out tracker -->
+      <div class="section-card" id="sec-eatout">
+        <div class="section-header">
+          <span class="section-title">🍽 Eat Out</span>
+        </div>
+        <div class="eatout-quick">
+          <button class="eatout-quick-btn" data-quick-eat="91">91 kr</button>
+          <button class="eatout-quick-btn alt" data-quick-eat="163">163 kr</button>
+        </div>
+        <div class="eatout-custom">
+          <input type="number" id="eatout-amount-input" inputmode="decimal" min="0" step="0.5" placeholder="Custom amount (kr)">
+          <button id="eatout-add">Log</button>
+        </div>
+        <div id="eatout-summary"></div>
+        <div class="list-body" id="list-eatout"></div>
       </div>
       <!-- Rehab -->
       <div class="section-card">
@@ -1389,6 +1456,7 @@ const data = {
   probNotes: LS.get('lm_probNotes', LS.get('lm_probnotes', {})), // { problemId: text }
   activities: LS.get('lm_activities', DEFAULTS.activities),
   activityLogs: LS.get('lm_activityLogs', LS.get('lm_activitylogs', {})), // { activityId: [{id, date}] }
+  eatOuts: LS.get('lm_eatOuts', []), // [{id, date, amount}] — eating-out expenses
 };
 
 function save(key) { LS.set('lm_' + key, data[key]); }
@@ -1957,6 +2025,116 @@ function deleteActivityLog(logId) {
   renderActivities();
 }
 
+/* ── Eat Out tracker — log how often you eat out & what it costs ── */
+function fmtKr(a) { return (Math.round((a || 0) * 100) / 100) + ' kr'; }
+
+function addEatOut(amount) {
+  const a = parseFloat(amount);
+  if (!(a > 0)) return false;
+  data.eatOuts.push({ id: uid(), date: TODAY(), amount: Math.round(a * 100) / 100, ts: Date.now() });
+  save('eatOuts');
+  renderEatOut();
+  return true;
+}
+
+function deleteEatOut(id) {
+  data.eatOuts = data.eatOuts.filter(e => e.id !== id);
+  save('eatOuts');
+  renderEatOut();
+}
+
+function renderEatOut() {
+  const listEl = document.getElementById('list-eatout');
+  const sumEl  = document.getElementById('eatout-summary');
+  if (!listEl || !sumEl) return;
+  const sorted = [...data.eatOuts].sort((a, b) => {
+    const d = (b.date || '').localeCompare(a.date || '');
+    return d !== 0 ? d : ((b.ts || 0) - (a.ts || 0)); // same day → newest logged first
+  });
+  // Monthly summary — entries in the current calendar month
+  const monthKey = TODAY().slice(0, 7);
+  const month = data.eatOuts.filter(e => (e.date || '').startsWith(monthKey));
+  const total = month.reduce((s, e) => s + (e.amount || 0), 0);
+  sumEl.innerHTML = month.length
+    ? `This month: <strong>${month.length}×</strong> · <strong>${fmtKr(total)}</strong>`
+    : 'This month: nothing logged yet';
+  listEl.innerHTML = '';
+  if (!sorted.length) {
+    listEl.innerHTML = emptyState('No eat-out entries yet — tap 91 kr or 163 kr to log one');
+    return;
+  }
+  sorted.forEach(e => {
+    const row = document.createElement('div');
+    row.className = 'list-item fade-in';
+    row.dataset.eatId = e.id;
+    row.innerHTML = `
+      <div class="item-main">
+        <span class="item-title">${escHtml(e.date)}</span>
+        <div class="item-sub">${relDateLabel(e.date)}</div>
+      </div>
+      <span class="eat-amount">${fmtKr(e.amount)}</span>
+      <button class="eat-row-edit" data-edit-eat="${e.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
+      <button class="eat-row-del" data-del-eat="${e.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
+    listEl.appendChild(row);
+  });
+}
+
+function startEditEat(id) {
+  const listEl = document.getElementById('list-eatout');
+  const entry = data.eatOuts.find(e => e.id === id);
+  const row = listEl && listEl.querySelector(`[data-eat-id="${id}"]`);
+  if (!entry || !row) return;
+  row.innerHTML = `
+    <div class="eat-edit-row">
+      <input type="date" class="activity-date-input" id="eat-ed-date-${id}" value="${entry.date}">
+      <div class="amount-line">
+        <input type="number" class="activity-date-input" id="eat-ed-amount-${id}" value="${entry.amount}" min="0" step="0.5" inputmode="decimal">
+        <button class="history-save-btn" data-save-eat="${id}" style="flex:0 0 auto;">Save</button>
+        <button class="history-cancel-btn" data-cancel-eat style="flex:0 0 auto;">Cancel</button>
+      </div>
+    </div>`;
+}
+
+function saveEditEat(id) {
+  const entry = data.eatOuts.find(e => e.id === id);
+  const d = document.getElementById('eat-ed-date-' + id);
+  const a = document.getElementById('eat-ed-amount-' + id);
+  if (!entry || !d || !a) return;
+  const amt = parseFloat(a.value);
+  if (!(amt > 0)) return;
+  entry.date = d.value || TODAY();
+  entry.amount = Math.round(amt * 100) / 100;
+  save('eatOuts');
+  renderEatOut();
+}
+
+// Eat Out card events
+const secEatOut = document.getElementById('sec-eatout');
+if (secEatOut) {
+  secEatOut.addEventListener('click', e => {
+    const q = e.target.closest('[data-quick-eat]');
+    if (q) { addEatOut(q.dataset.quickEat); return; }
+    if (e.target.closest('#eatout-add')) {
+      const inp = document.getElementById('eatout-amount-input');
+      if (addEatOut(inp.value)) inp.value = '';
+      return;
+    }
+    const del = e.target.closest('[data-del-eat]');
+    if (del) { deleteEatOut(del.dataset.delEat); return; }
+    const ed = e.target.closest('[data-edit-eat]');
+    if (ed) { startEditEat(ed.dataset.editEat); return; }
+    const sv = e.target.closest('[data-save-eat]');
+    if (sv) { saveEditEat(sv.dataset.saveEat); return; }
+    if (e.target.closest('[data-cancel-eat]')) { renderEatOut(); return; }
+  });
+  secEatOut.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.id === 'eatout-amount-input') {
+      const inp = document.getElementById('eatout-amount-input');
+      if (addEatOut(inp.value)) inp.value = '';
+    }
+  });
+}
+
 /* ── Overview — everything prioritized across tabs ──
    Shows: pinned items everywhere, plus Priority-status exams/labs &
    Priority + "Get to" problems. Redo / Done / Archived do NOT appear. */
@@ -2062,6 +2240,7 @@ function renderAll() {
   renderExams();
   renderLabs();
   renderActivities();
+  renderEatOut();
   renderChecklist('rehab');
   renderChecklist('motion');
   renderPhysics();
@@ -2871,7 +3050,7 @@ settingsOverlay.addEventListener('input', e => {
 document.getElementById('settings-btn').addEventListener('click', openSettings);
 
 // ── Export / Import (data backup) ──
-const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','business','cs','problems','rules','notes','checks','physLogs','probNotes','activities','activityLogs'];
+const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','business','cs','problems','rules','notes','checks','physLogs','probNotes','activities','activityLogs','eatOuts'];
 
 function buildBackup() {
   const payload = {
