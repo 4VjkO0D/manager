@@ -1095,6 +1095,104 @@
   .eat-edit-row { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .eat-edit-row .amount-line { display: flex; gap: 6px; }
   .eat-edit-row .amount-line input[type="number"] { flex: 1; min-width: 0; }
+
+  /* ── Notes tab — 3 separate notebooks, switcher pinned above the nav ── */
+  #content:has(#tab-notes.active) {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #tab-notes.active {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 16px calc(var(--nav-h) + 12px);
+  }
+  #tab-notes.active #word-count { flex-shrink: 0; }
+  #tab-notes.active .notes-area {
+    flex: 1;
+    min-height: 0;
+    margin: 0 0 12px;
+  }
+  .notes-switcher {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .note-var {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 17px; font-weight: 700; font-family: inherit;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+  }
+  .note-var:active { transform: scale(0.94); }
+  .note-var.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ── Daily goals ── */
+  #goal-today-header { padding: 4px 16px 0; font-size: 12px; color: var(--text-muted); font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+  #goal-summary { padding: 6px 16px 2px; font-size: 13px; color: var(--text-muted); }
+  #goal-summary strong { color: var(--text); }
+  .goal-item { padding: 10px 14px; border-top: 1px solid var(--border); transition: background var(--transition); }
+  .goal-item:first-child { border-top: none; }
+  .goal-item.is-success { background: rgba(52,211,153,0.07); }
+  .goal-item.is-fail { background: rgba(248,113,113,0.07); }
+  .goal-item-top { display: flex; align-items: center; gap: 8px; }
+  .goal-text { font-size: 14px; font-weight: 500; word-break: break-word; }
+  .goal-meta { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+  .goal-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; }
+  .goal-badge.do { background: rgba(52,211,153,0.15); color: var(--green); }
+  .goal-badge.dont { background: rgba(248,113,113,0.15); color: var(--red); }
+  .oath-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; background: rgba(108,99,255,0.18); color: var(--accent2); border: 1px dashed rgba(167,139,250,0.55); }
+  .goal-mark { display: flex; gap: 8px; margin-top: 8px; }
+  .goal-result {
+    flex: 1; padding: 8px 0;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+  }
+  .goal-result.success:hover { border-color: var(--green); color: var(--green); }
+  .goal-result.fail:hover { border-color: var(--red); color: var(--red); }
+  .goal-result.success.active { background: rgba(52,211,153,0.18); border-color: var(--green); color: var(--green); }
+  .goal-result.fail.active { background: rgba(248,113,113,0.18); border-color: var(--red); color: var(--red); }
+  .goal-history-title { padding: 14px 16px 0; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); }
+  .goal-day { border-top: 1px solid var(--border); }
+  .goal-day summary { padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); list-style: none; display: flex; align-items: center; }
+  .goal-day summary::-webkit-details-marker { display: none; }
+  .goal-day summary::before { content: '▸'; color: var(--text-muted); margin-right: 6px; }
+  .goal-day[open] summary::before { content: '▾'; }
+  .goal-day-body { padding: 0 14px 8px; }
+  .goal-hist-entry { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+  .goal-hist-entry .gh-mark { width: 16px; flex-shrink: 0; text-align: center; }
+  .goal-hist-entry.ok .gh-mark { color: var(--green); }
+  .goal-hist-entry.no .gh-mark { color: var(--red); }
+  .goal-hist-entry .gh-text { flex: 1; min-width: 0; word-break: break-word; }
+  .goal-hist-entry .gh-badge { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+  .oath-dot { color: var(--accent2); }
+  .goal-hist-empty { padding: 8px 14px; font-size: 12px; color: var(--text-muted); }
+
+  /* ── Modal select & checkbox fields ── */
+  .modal-select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-size: 14px; padding: 10px 12px; outline: none; font-family: inherit;
+  }
+  .modal-check {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 13px; color: var(--text);
+  }
+  .modal-check input { width: 18px; height: 18px; accent-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -1137,30 +1235,6 @@
       </div>
     </div>
     <div id="tab-health" class="tab-panel">
-      <!-- Activity Tracker -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="section-title">Activity Tracker</span>
-          <button class="add-btn" data-action="add-activity"><i class="fa-solid fa-plus"></i> Add</button>
-        </div>
-        <div class="list-body" id="list-activities"></div>
-      </div>
-      <!-- Eat Out tracker -->
-      <div class="section-card" id="sec-eatout">
-        <div class="section-header">
-          <span class="section-title">🍽 Eat Out</span>
-        </div>
-        <div class="eatout-quick">
-          <button class="eatout-quick-btn" data-quick-eat="91">91 kr</button>
-          <button class="eatout-quick-btn alt" data-quick-eat="163">163 kr</button>
-        </div>
-        <div class="eatout-custom">
-          <input type="number" id="eatout-amount-input" inputmode="decimal" min="0" step="0.5" placeholder="Custom amount (kr)">
-          <button id="eatout-add">Log</button>
-        </div>
-        <div id="eatout-summary"></div>
-        <div class="list-body" id="list-eatout"></div>
-      </div>
       <!-- Rehab -->
       <div class="section-card">
         <div class="section-header">
@@ -1187,21 +1261,43 @@
       </div>
     </div>
 
-    <!-- PROJECTS TAB -->
-    <div id="tab-projects" class="tab-panel">
-      <div class="section-card">
+    <!-- DAILY TAB -->
+    <div id="tab-daily" class="tab-panel">
+      <!-- Goals -->
+      <div class="section-card" id="sec-goals">
         <div class="section-header">
-          <span class="section-title">Business</span>
-          <button class="add-btn" data-action="add" data-section="business"><i class="fa-solid fa-plus"></i> Add</button>
+          <span class="section-title">🎯 Goals</span>
+          <button class="add-btn" data-action="add" data-section="goals"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
-        <div class="list-body" id="list-business"></div>
+        <div class="goal-today-header" id="goal-today-header"></div>
+        <div id="goal-summary"></div>
+        <div class="list-body" id="list-goals"></div>
+        <div class="goal-history-title">Past days</div>
+        <div class="list-body" id="list-goal-history"></div>
       </div>
+      <!-- Activity Tracker -->
       <div class="section-card">
         <div class="section-header">
-          <span class="section-title">CS Projects</span>
-          <button class="add-btn" data-action="add" data-section="cs"><i class="fa-solid fa-plus"></i> Add</button>
+          <span class="section-title">Activity Tracker</span>
+          <button class="add-btn" data-action="add-activity"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
-        <div class="list-body" id="list-cs"></div>
+        <div class="list-body" id="list-activities"></div>
+      </div>
+      <!-- Eat Out tracker -->
+      <div class="section-card" id="sec-eatout">
+        <div class="section-header">
+          <span class="section-title">🍽 Eat Out</span>
+        </div>
+        <div class="eatout-quick">
+          <button class="eatout-quick-btn" data-quick-eat="91">91 kr</button>
+          <button class="eatout-quick-btn alt" data-quick-eat="163">163 kr</button>
+        </div>
+        <div class="eatout-custom">
+          <input type="number" id="eatout-amount-input" inputmode="decimal" min="0" step="0.5" placeholder="Custom amount (kr)">
+          <button id="eatout-add">Log</button>
+        </div>
+        <div id="eatout-summary"></div>
+        <div class="list-body" id="list-eatout"></div>
       </div>
     </div>
 
@@ -1236,6 +1332,11 @@
     <div id="tab-notes" class="tab-panel">
       <div id="word-count">0 words</div>
       <textarea class="notes-area" id="notes-textarea" placeholder="Start typing your notes…"></textarea>
+      <div class="notes-switcher" id="notes-switcher">
+        <button class="note-var active" data-note="0" title="Notes 1">1</button>
+        <button class="note-var" data-note="1" title="Notes 2">2</button>
+        <button class="note-var" data-note="2" title="Notes 3">3</button>
+      </div>
     </div>
 
 
@@ -1246,7 +1347,7 @@
     <button class="nav-btn active" data-tab="overview"><i class="fa-solid fa-gauge-high"></i>Overview</button>
     <button class="nav-btn" data-tab="school"><i class="fa-solid fa-graduation-cap"></i>School</button>
     <button class="nav-btn" data-tab="health"><i class="fa-solid fa-heart-pulse"></i>Health</button>
-    <button class="nav-btn" data-tab="projects"><i class="fa-solid fa-diagram-project"></i>Projects</button>
+    <button class="nav-btn" data-tab="daily"><i class="fa-solid fa-calendar-day"></i>Daily</button>
     <button class="nav-btn" data-tab="problems"><i class="fa-solid fa-triangle-exclamation"></i>Problems</button>
     <button class="nav-btn" data-tab="notes"><i class="fa-solid fa-note-sticky"></i>Notes</button>
   </nav>
@@ -1429,10 +1530,9 @@ const DEFAULTS = {
   rehab:    ['Shoulder stretch', 'Knee flexion', 'Ankle circles'].map(t => ({ id: uid(), title: t })),
   motion:   ['Walk 10,000 steps', 'Stretch 15min', 'Stand 2hrs'].map(t => ({ id: uid(), title: t })),
   physics:  [],
-  business: [],
-  cs:       [],
   problems: [],
   rules:    [],
+  goals:    [],
   notes:    ''
 };
 
@@ -1445,11 +1545,13 @@ const data = {
   rehab:    LS.get('lm_rehab',    DEFAULTS.rehab),
   motion:   LS.get('lm_motion',   DEFAULTS.motion),
   physics:  LS.get('lm_physics',  DEFAULTS.physics),
-  business: LS.get('lm_business', DEFAULTS.business),
-  cs:       LS.get('lm_cs',       DEFAULTS.cs),
   problems: LS.get('lm_problems', DEFAULTS.problems),
   rules:    LS.get('lm_rules',    DEFAULTS.rules),
+  goals:    LS.get('lm_goals',    DEFAULTS.goals),   // goal pool: [{id, text, kind:'do'|'dont', oath:bool}]
+  goalResults: LS.get('lm_goalResults', {}),         // { 'YYYY-MM-DD': [{id, text, kind, oath, result:'success'|'fail'}] }
   notes:    LS.get('lm_notes',    DEFAULTS.notes),
+  notes2:   LS.get('lm_notes2',   ''),
+  notes3:   LS.get('lm_notes3',   ''),
   checks:   LS.get('lm_checks',   {}),  // { date: { rehab: {id:bool}, motion: {id:bool} } }
   // Note: save() writes "lm_" + key, so these use camelCase keys; fall back to legacy lowercase keys for migration.
   physLogs: LS.get('lm_physLogs', LS.get('lm_physlogs', {})),  // { exerciseId: [{date, sets, reps, weight}] }
@@ -1576,7 +1678,7 @@ let autosaveTimer = null;
 let currentProblemFilter = 'all';  // 'all' | 'priority' | 'later' | 'archived'
 
 // Tab display names
-const TAB_NAMES = { overview:'Overview', school:'School', health:'Health', projects:'Projects', problems:'Problems', notes:'Notes' };
+const TAB_NAMES = { overview:'Overview', school:'School', health:'Health', daily:'Daily', problems:'Problems', notes:'Notes' };
 
 // ── Render functions ──
 
@@ -1672,7 +1774,7 @@ function schoolSort(section, items) {
   return [...pinned.filter(x => x.status !== 'done'), ...pinned.filter(x => x.status === 'done')];
 }
 
-/* Generic simple list (business, cs) */
+/* Generic simple list (rules) */
 function renderSimpleList(section, listEl) {
   const items = sortPinned(section, data[section]);
   listEl.innerHTML = '';
@@ -1897,9 +1999,39 @@ function problemRow(item) {
 }
 
 /* Notes tab */
+// ── Notes tab — 3 separate notebooks (switcher: 1 / 2 / 3) ──
+let currentNote = 0;   // which notebook is open (0, 1 or 2)
+
+function noteVarKey(idx) {
+  if (idx === 1) return 'notes2';
+  if (idx === 2) return 'notes3';
+  return 'notes';
+}
+
+function saveActiveNotes() {
+  const key = noteVarKey(currentNote);
+  data[key] = notesTA.value;
+  save(key);
+}
+
 function initNotes() {
-  notesTA.value = data.notes || '';
+  notesTA.value = data[noteVarKey(currentNote)] || '';
   updateWordCount();
+  renderNoteSwitcher();
+}
+
+function renderNoteSwitcher() {
+  const sw = document.getElementById('notes-switcher');
+  if (!sw) return;
+  sw.querySelectorAll('.note-var').forEach(b => b.classList.toggle('active', parseInt(b.dataset.note, 10) === currentNote));
+}
+
+function switchNote(idx) {
+  if (idx === currentNote) return;
+  clearTimeout(notesTA._t);   // flush any pending auto-save into the old notebook first
+  saveActiveNotes();
+  currentNote = idx;
+  initNotes();
 }
 function updateWordCount() {
   const words = notesTA.value.trim() ? notesTA.value.trim().split(/\s+/).length : 0;
@@ -2135,6 +2267,131 @@ if (secEatOut) {
   });
 }
 
+/* ── Daily Goals — recurring goal pool, results recorded per day ── */
+function todayGoalEntries() {
+  const today = TODAY();
+  if (!data.goalResults[today]) data.goalResults[today] = [];
+  return data.goalResults[today];
+}
+
+function setGoalResult(goalId, result) {
+  const goal = data.goals.find(g => g.id === goalId);
+  if (!goal) return;
+  const entries = todayGoalEntries();
+  const idx = entries.findIndex(e => e.id === goalId);
+  const cur = idx >= 0 ? entries[idx].result : null;
+  if (result === cur) {
+    // tapping the active button again clears the mark
+    if (idx >= 0) entries.splice(idx, 1);
+  } else if (idx >= 0) {
+    entries[idx] = { id: goal.id, text: goal.text, kind: goal.kind, oath: !!goal.oath, result };
+  } else {
+    entries.push({ id: goal.id, text: goal.text, kind: goal.kind, oath: !!goal.oath, result });
+  }
+  save('goalResults');
+  renderGoals();
+}
+
+// After editing a goal, refresh today's snapshot label (history stays untouched)
+function syncTodayGoalText(goal) {
+  const e = todayGoalEntries().find(x => x.id === goal.id);
+  if (e) { e.text = goal.text; e.kind = goal.kind; e.oath = !!goal.oath; save('goalResults'); }
+}
+
+function goalBadgeHtml(g) {
+  return g.kind === 'dont'
+    ? '<span class="goal-badge dont"><i class="fa-solid fa-hand"></i> Don\u2019t</span>'
+    : '<span class="goal-badge do"><i class="fa-solid fa-circle-check"></i> Do</span>';
+}
+function oathBadgeHtml(g) {
+  return g.oath ? '<span class="oath-badge"><i class="fa-solid fa-scale-balanced"></i> Oath</span>' : '';
+}
+function shortDay(dStr) {
+  try { return new Date(dStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); }
+  catch { return dStr; }
+}
+
+function renderGoals() {
+  const listEl = document.getElementById('list-goals');
+  const headEl = document.getElementById('goal-today-header');
+  const sumEl  = document.getElementById('goal-summary');
+  const histEl = document.getElementById('list-goal-history');
+  if (!listEl || !sumEl) return;
+
+  if (headEl) headEl.textContent = 'Today — ' + shortDay(TODAY());
+
+  const marks = todayGoalEntries();
+  const ok = marks.filter(m => m.result === 'success').length;
+  const no = marks.filter(m => m.result === 'fail').length;
+  const total = data.goals.length;
+  sumEl.innerHTML = total
+    ? `Today: <strong>${ok} ✓</strong> · <strong>${no} ✗</strong> · ${total - ok - no} unmarked`
+    : 'Tap the ⭐ add button (edit mode) to add your first goal';
+
+  listEl.innerHTML = '';
+  if (!total) {
+    listEl.innerHTML = emptyState('No goals yet — press ✏️ then Add to create some');
+    return;
+  }
+  const resultMap = {};
+  marks.forEach(m => resultMap[m.id] = m.result);
+  data.goals.forEach(g => {
+    const r = resultMap[g.id] || '';
+    const row = document.createElement('div');
+    row.className = 'goal-item fade-in' + (r === 'success' ? ' is-success' : r === 'fail' ? ' is-fail' : '');
+    row.innerHTML = `
+      <div class="goal-item-top">
+        <div class="item-main">
+          <span class="goal-text">${escHtml(g.text)}</span>
+          <div class="goal-meta">${goalBadgeHtml(g)}${oathBadgeHtml(g)}</div>
+        </div>
+        ${editBtnHtml('goals', g.id)}
+        <button class="delete-btn" data-action="delete" data-section="goals" data-id="${g.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <div class="goal-mark">
+        <button class="goal-result success${r === 'success' ? ' active' : ''}" data-goal-result="${g.id}" data-result="success"><i class="fa-solid fa-check"></i> Success</button>
+        <button class="goal-result fail${r === 'fail' ? ' active' : ''}" data-goal-result="${g.id}" data-result="fail"><i class="fa-solid fa-xmark"></i> Failed</button>
+      </div>`;
+    listEl.appendChild(row);
+  });
+
+  renderGoalHistory(histEl);
+}
+
+function renderGoalHistory(histEl) {
+  if (!histEl) return;
+  histEl.innerHTML = '';
+  const today = TODAY();
+  const days = Object.keys(data.goalResults).filter(d => d !== today).sort().reverse().slice(0, 30);
+  if (!days.length) {
+    histEl.innerHTML = '<div class="goal-hist-empty">Registered days will appear here as you use it.</div>';
+    return;
+  }
+  days.forEach(d => {
+    const entries = data.goalResults[d] || [];
+    const ok = entries.filter(e => e.result === 'success').length;
+    const no = entries.filter(e => e.result === 'fail').length;
+    const body = entries.length ? entries.map(e => `
+      <div class="goal-hist-entry ${e.result === 'success' ? 'ok' : e.result === 'fail' ? 'no' : ''}">
+        <span class="gh-mark">${e.result === 'success' ? '✓' : e.result === 'fail' ? '✗' : '·'}</span>
+        <span class="gh-text">${escHtml(e.text)}${e.oath ? ' <span class="oath-dot">⚖</span>' : ''}</span>
+        <span class="gh-badge">${e.kind === 'dont' ? 'Don\u2019t' : 'Do'}</span>
+      </div>`).join('')
+      : '<div class="goal-hist-empty">No marks</div>';
+    histEl.innerHTML += `
+      <details class="goal-day">
+        <summary>${shortDay(d)} · ${ok} ✓ · ${no} ✗</summary>
+        <div class="goal-day-body">${body}</div>
+      </details>`;
+  });
+}
+
+// Goal result buttons (always visible, no edit mode needed)
+document.getElementById('list-goals').addEventListener('click', e => {
+  const b = e.target.closest('[data-goal-result]');
+  if (b) setGoalResult(b.dataset.goalResult, b.dataset.result);
+});
+
 /* ── Overview — everything prioritized across tabs ──
    Shows: pinned items everywhere, plus Priority-status exams/labs &
    Priority + "Get to" problems. Redo / Done / Archived do NOT appear. */
@@ -2144,9 +2401,7 @@ const OVERVIEW_SECTIONS = [
   { section: 'rehab',      tab: 'health',   label: 'Rehab Exercises',  icon: 'fa-hand-holding-heart' },
   { section: 'motion',     tab: 'health',   label: 'Motion Goals',     icon: 'fa-person-walking' },
   { section: 'physics',    tab: 'health',   label: 'Gym Exercises',    icon: 'fa-dumbbell' },
-  { section: 'activities', tab: 'health',   label: 'Activity Tracker', icon: 'fa-chart-line' },
-  { section: 'business',   tab: 'projects', label: 'Business',         icon: 'fa-briefcase' },
-  { section: 'cs',         tab: 'projects', label: 'CS Projects',      icon: 'fa-code' },
+  { section: 'activities', tab: 'daily',    label: 'Activity Tracker', icon: 'fa-chart-line' },
   { section: 'rules',      tab: 'problems', label: 'Rules',            icon: 'fa-list-check' },
   { section: 'problems',   tab: 'problems', label: 'Problems',         icon: 'fa-triangle-exclamation' }
 ];
@@ -2241,11 +2496,10 @@ function renderAll() {
   renderLabs();
   renderActivities();
   renderEatOut();
+  renderGoals();
   renderChecklist('rehab');
   renderChecklist('motion');
   renderPhysics();
-  renderSimpleList('business', document.getElementById('list-business'));
-  renderSimpleList('cs',       document.getElementById('list-cs'));
   renderProblems();
   renderSimpleList('rules', document.getElementById('list-rules'));
   initNotes();
@@ -2390,8 +2644,7 @@ function renderSection(section) {
     case 'rehab':    renderChecklist('rehab'); break;
     case 'motion':   renderChecklist('motion'); break;
     case 'physics':  renderPhysics(); break;
-    case 'business': renderSimpleList('business', document.getElementById('list-business')); break;
-    case 'cs':       renderSimpleList('cs',       document.getElementById('list-cs')); break;
+    case 'goals':    renderGoals(); break;
     case 'problems': renderProblems(); break;
     case 'rules':    renderSimpleList('rules', document.getElementById('list-rules')); break;
   }
@@ -2402,6 +2655,12 @@ function renderSection(section) {
 function deleteItem(section, id) {
   data[section] = data[section].filter(x => x.id !== id);
   if (section === 'problems') { delete data.probNotes[id]; save('probNotes'); }
+  if (section === 'goals') {
+    // remove today's mark too; past days' records stay as history
+    const t = TODAY();
+    if (data.goalResults[t]) data.goalResults[t] = data.goalResults[t].filter(e => e.id !== id);
+    save('goalResults');
+  }
   save(section);
   renderSection(section);
 }
@@ -2433,8 +2692,11 @@ const MODAL_CONFIGS = {
                 { id:'reps',   label:'Reps',          type:'number', placeholder:'10', min:1 },
                 { id:'weight', label:'Weight (kg)',   type:'number', placeholder:'60', min:0, step:0.5 }
               ]},
-  business: { title: 'Add Project',   fields: [{ id:'title', label:'Title', type:'text', placeholder:'' }] },
-  cs:       { title: 'Add Project',   fields: [{ id:'title', label:'Title', type:'text', placeholder:'' }] },
+  goals:    { title: 'Add Goal',      fields: [
+                { id:'text', label:'What do you want to do (or not do)?', type:'text', placeholder:'e.g. No phone after 10pm / Read 10 pages' },
+                { id:'kind', label:'Type', type:'select', options: [{ value:'do', label:'✅ Do this' }, { value:'dont', label:'🚫 Don\u2019t do this' }] },
+                { id:'oath', label:'I swore an oath not to do this', type:'checkbox' }
+              ]},
   problems: { title: 'Add Problem',   fields: [{ id:'title', label:'Problem', type:'text', placeholder:'' }] },
   rules:    { title: 'Add Rule',      fields: [{ id:'title', label:'Rule', type:'text', placeholder:'e.g. No phone after 10pm' }] },
   activities: { title: 'Edit Activity', fields: [{ id:'title', label:'Activity name', type:'text', placeholder:'' }] },
@@ -2474,7 +2736,9 @@ function openModal(section, editId) {
     if (item) {
       cfg.fields.forEach(f => {
         const el = document.getElementById('mf-' + f.id);
-        if (el && item[f.id] !== undefined && item[f.id] !== null) el.value = item[f.id];
+        if (!el) return;
+        if (f.type === 'checkbox') { el.checked = !!item[f.id]; return; }
+        if (item[f.id] !== undefined && item[f.id] !== null) el.value = item[f.id];
       });
     }
   }
@@ -2487,6 +2751,19 @@ function openModal(section, editId) {
 function fieldHtml(f) {
   const extra = f.min !== undefined ? `min="${f.min}"` : '';
   const step  = f.step ? `step="${f.step}"` : '';
+  if (f.type === 'select') {
+    const opts = (f.options || []).map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+    return `<div class="modal-field">
+      <label for="mf-${f.id}">${f.label}</label>
+      <select id="mf-${f.id}" class="modal-select">${opts}</select>
+    </div>`;
+  }
+  if (f.type === 'checkbox') {
+    return `<label class="modal-check">
+      <input type="checkbox" id="mf-${f.id}">
+      <span>${f.label}</span>
+    </label>`;
+  }
   return `<div class="modal-field">
     <label for="mf-${f.id}">${f.label}</label>
     <input id="mf-${f.id}" type="${f.type}" placeholder="${f.placeholder || ''}" ${extra} ${step}>
@@ -2509,17 +2786,29 @@ function confirmAdd() {
 
   cfg.fields.forEach(f => {
     const el = document.getElementById('mf-' + f.id);
-    const val = el ? el.value.trim() : '';
+    if (!el) return;
+    if (f.type === 'checkbox') {
+      if (el.checked) item[f.id] = true;
+      else delete item[f.id];
+      return;
+    }
+    const val = el.value.trim();
     if (f.type === 'text' && !val && !f.optional) { valid = false; el && el.focus(); return; }
     if (f.type === 'number') item[f.id] = parseFloat(val) || 0;
+    else if (f.type === 'select') { if (val) item[f.id] = val; else delete item[f.id]; }
     else if (val) item[f.id] = val;       // set if non-empty (handles optional date)
     else delete item[f.id];               // field cleared — remove it (e.g. lab deadline removed)
   });
+
+  // An oath only makes sense on a "Don't" goal
+  if (pendingSection === 'goals' && item.kind !== 'dont') delete item.oath;
 
   if (!valid) return;
 
   if (!existing) data[pendingSection].push(item);
   save(pendingSection);
+  // Keep today's goal snapshot in step with an edit (history stays as it was)
+  if (pendingSection === 'goals' && existing) syncTodayGoalText(existing);
   renderSection(pendingSection);
   closeModal();
 }
@@ -2665,11 +2954,17 @@ probTA.addEventListener('input', () => {
   }, 600);
 });
 
-// ── Notes auto-save ──
+// ── Notes auto-save (saves to whichever notebook is open) ──
 notesTA.addEventListener('input', () => {
   updateWordCount();
   clearTimeout(notesTA._t);
-  notesTA._t = setTimeout(() => { data.notes = notesTA.value; save('notes'); }, 500);
+  notesTA._t = setTimeout(saveActiveNotes, 500);
+});
+
+// ── Notes notebook switcher (1 / 2 / 3) ──
+document.getElementById('notes-switcher').addEventListener('click', e => {
+  const b = e.target.closest('.note-var');
+  if (b) switchNote(parseInt(b.dataset.note, 10) || 0);
 });
 
 // ── Add activity ──
@@ -2883,7 +3178,7 @@ function notifCheck() {
     const body = overdue.length
       ? 'Overdue: ' + overdue.slice(0, 4).map(x => x.title).join(', ') + (overdue.length > 4 ? '…' : '') + ' — log them to catch up!'
       : 'Log any activities you did today to keep your tracker up to date.';
-    sendNotif('📊 Activity tracker', body, 'activity', 'health');
+    sendNotif('📊 Activity tracker', body, 'activity', 'daily');
     fired.activity = true;
   }
 
@@ -3050,7 +3345,7 @@ settingsOverlay.addEventListener('input', e => {
 document.getElementById('settings-btn').addEventListener('click', openSettings);
 
 // ── Export / Import (data backup) ──
-const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','business','cs','problems','rules','notes','checks','physLogs','probNotes','activities','activityLogs','eatOuts'];
+const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','problems','rules','goals','goalResults','notes','notes2','notes3','checks','physLogs','probNotes','activities','activityLogs','eatOuts'];
 
 function buildBackup() {
   const payload = {
