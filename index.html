@@ -1554,6 +1554,14 @@
           <input type="checkbox" id="nf-problems">
           <span><strong>🗂 Problems</strong><small>Remind to review uncategorized problems</small></span>
         </label>
+        <label class="notif-row">
+          <input type="checkbox" id="nf-review">
+          <span><strong>🌙 End-of-day review</strong><small>Remind to mark today's goals &amp; log any eat-out</small></span>
+        </label>
+        <div class="notif-config" id="nf-review-cfg">
+          <span>Remind at</span>
+          <input type="time" id="nf-review-time" value="22:00">
+        </div>
       </div>
 
       <button id="notif-test" class="notif-test-btn"><i class="fa-solid fa-bell"></i> Send test notification</button>
@@ -3235,7 +3243,8 @@ const NOTIF_PREFS_DEFAULT = {
   exams:    { on: true, days: 3 },
   health:   { on: true, time: '18:00' },
   activity: { on: true, time: '21:00', days: 7 },
-  problems: { on: true }
+  problems: { on: true },
+  review:   { on: true, time: '22:00' }
 };
 
 function loadNotifPrefs() {
@@ -3293,7 +3302,7 @@ function notifCheck() {
 
   const today = TODAY();
   let fired = LS.get('lm_notif_fired', {});
-  if (fired.date !== today) fired = { date: today, exams: {}, health: false, activity: false, problems: false };
+  if (fired.date !== today) fired = { date: today, exams: {}, health: false, activity: false, problems: false, review: false };
 
   if (prefs.exams.on) {
     data.exams.forEach(ex => {
@@ -3355,6 +3364,20 @@ function notifCheck() {
     }
   }
 
+  // End-of-day review — remind to mark goals and log any eat-out before the day ends
+  if (prefs.review.on && !fired.review && pastTime(prefs.review.time || '22:00')) {
+    const marked = todayGoalEntries().length;
+    const unmarked = Math.max(0, data.goals.length - marked);
+    const ateOutToday = data.eatOuts.some(e => (e.date || '') === today);
+    const bits = [];
+    if (unmarked > 0) bits.push(unmarked + ' goal' + (unmarked === 1 ? '' : 's') + ' not marked yet');
+    if (!ateOutToday) bits.push('no eat-out logged today');
+    if (bits.length) {
+      sendNotif('🌙 End-of-day review', 'End of day: ' + bits.join(' · ') + ' — tap to mark ✓/✗ and log.', 'review', 'daily');
+    }
+    fired.review = true;
+  }
+
   LS.set('lm_notif_fired', fired);
 }
 // Notifications panel UI
@@ -3397,11 +3420,14 @@ function renderNotifPanel() {
   document.getElementById('nf-activity-time').value = prefs.activity.time || '21:00';
   document.getElementById('nf-activity-days').value = prefs.activity.days;
   document.getElementById('nf-problems').checked = !!prefs.problems.on;
+  document.getElementById('nf-review').checked = !!prefs.review.on;
+  document.getElementById('nf-review-time').value = prefs.review.time || '22:00';
 
   document.getElementById('nf-exams-cfg').style.display = prefs.exams.on ? 'flex' : 'none';
   document.getElementById('nf-health-cfg').style.display = prefs.health.on ? 'flex' : 'none';
   document.getElementById('nf-activity-cfg').style.display = prefs.activity.on ? 'flex' : 'none';
   document.getElementById('nf-activity-cfg2').style.display = prefs.activity.on ? 'flex' : 'none';
+  document.getElementById('nf-review-cfg').style.display = prefs.review.on ? 'flex' : 'none';
 
   const ovGetto = document.getElementById('ov-getto');
   if (ovGetto) ovGetto.checked = getOverviewGettoPref();
@@ -3487,6 +3513,8 @@ settingsOverlay.addEventListener('change', e => {
   if (id === 'nf-activity-time') prefs.activity.time = e.target.value || '21:00';
   if (id === 'nf-activity-days') prefs.activity.days = Math.max(1, parseInt(e.target.value, 10) || 1);
   if (id === 'nf-problems') prefs.problems.on = e.target.checked;
+  if (id === 'nf-review') prefs.review.on = e.target.checked;
+  if (id === 'nf-review-time') prefs.review.time = e.target.value || '22:00';
   saveNotifPrefs(prefs);
   renderNotifPanel();
   updateNotifIndicator();
@@ -3497,12 +3525,13 @@ settingsOverlay.addEventListener('change', e => {
 settingsOverlay.addEventListener('input', e => {
   const id = e.target.id;
   if (!id) return;
-  if (id !== 'nf-exams-days' && id !== 'nf-activity-days' && id !== 'nf-health-time' && id !== 'nf-activity-time') return;
+  if (id !== 'nf-exams-days' && id !== 'nf-activity-days' && id !== 'nf-health-time' && id !== 'nf-activity-time' && id !== 'nf-review-time') return;
   const prefs = loadNotifPrefs();
   if (id === 'nf-health-time') prefs.health.time = e.target.value || '18:00';
   if (id === 'nf-activity-time') prefs.activity.time = e.target.value || '21:00';
   if (id === 'nf-exams-days') prefs.exams.days = Math.max(1, parseInt(e.target.value, 10) || 1);
   if (id === 'nf-activity-days') prefs.activity.days = Math.max(1, parseInt(e.target.value, 10) || 1);
+  if (id === 'nf-review-time') prefs.review.time = e.target.value || '22:00';
   saveNotifPrefs(prefs);
   notifSaveFeedback();
 });
