@@ -1077,8 +1077,16 @@
     transition: opacity var(--transition);
   }
   .eatout-custom button:hover { opacity: 0.85; }
-  #eatout-summary { padding: 0 16px 8px; font-size: 13px; color: var(--text-muted); }
-  #eatout-summary strong { color: var(--text); }
+  #eatout-summary { padding: 8px 16px 0; }
+  .eatout-stats { display: flex; gap: 8px; }
+  .eatout-stat {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 4px; text-align: center;
+  }
+  .eatout-stat .v { font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; }
+  .eatout-stat .l { font-size: 9px; color: var(--text-muted); letter-spacing: .4px; text-transform: uppercase; margin-top: 2px; }
+  .eatout-stat.est .v { color: var(--accent2); }
+  .eatout-foot { padding: 6px 0 10px; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
   .eat-amount { font-weight: 700; font-size: 13px; color: var(--green); flex-shrink: 0; }
   .eat-row-edit, .eat-row-del {
     width: 28px; height: 28px;
@@ -2291,10 +2299,23 @@ function renderEatOut() {
   // Monthly summary — entries in the current calendar month
   const monthKey = TODAY().slice(0, 7);
   const month = data.eatOuts.filter(e => (e.date || '').startsWith(monthKey));
-  const total = month.reduce((s, e) => s + (e.amount || 0), 0);
-  sumEl.innerHTML = month.length
-    ? `This month: <strong>${month.length}×</strong> · <strong>${fmtKr(total)}</strong>`
-    : 'This month: nothing logged yet';
+  const total   = month.reduce((s, e) => s + (e.amount || 0), 0);
+  const eatDays = new Set(month.map(e => e.date)).size;   // distinct days you ate out
+  const nowDate = TODAY();
+  const dayOfMonth = parseInt(nowDate.slice(8, 10), 10) || 1;
+  const daysInMonth = new Date(parseInt(nowDate.slice(0, 4), 10), parseInt(nowDate.slice(5, 7), 10), 0).getDate();
+  // Estimate: keep today's pace for the whole month → (total ÷ days so far) × days in month
+  const est = Math.round((total / dayOfMonth) * daysInMonth);
+
+  sumEl.innerHTML = `
+    <div class="eatout-stats">
+      <div class="eatout-stat"><div class="v">${month.length}</div><div class="l">Eat-outs</div></div>
+      <div class="eatout-stat"><div class="v">${fmtKr(total)}</div><div class="l">Spent</div></div>
+      <div class="eatout-stat est"><div class="v">${month.length ? '~' + est.toLocaleString() + ' kr' : '—'}</div><div class="l">Est. food month</div></div>
+    </div>
+    <div class="eatout-foot">${month.length
+      ? `Pace: ${eatDays} eat-out day${eatDays === 1 ? '' : 's'} out of ${dayOfMonth} day${dayOfMonth === 1 ? '' : 's'} · ≈ ${est.toLocaleString()} kr for the whole month if you keep this up`
+      : 'No eat-outs logged this month yet'}</div>`;
   listEl.innerHTML = '';
   if (!sorted.length) {
     listEl.innerHTML = emptyState('No eat-out entries yet — tap 91 kr or 163 kr to log one');
