@@ -1136,49 +1136,81 @@
   .note-var:active { transform: scale(0.94); }
   .note-var.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-  /* ── Daily goals ── */
-  #goal-today-header { padding: 4px 16px 0; font-size: 12px; color: var(--text-muted); font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
-  #goal-summary { padding: 6px 16px 2px; font-size: 13px; color: var(--text-muted); }
-  #goal-summary strong { color: var(--text); }
-  .goal-item { padding: 10px 14px; border-top: 1px solid var(--border); transition: background var(--transition); }
-  .goal-item:first-child { border-top: none; }
-  .goal-item.is-success { background: rgba(52,211,153,0.07); }
-  .goal-item.is-fail { background: rgba(248,113,113,0.07); }
-  .goal-item-top { display: flex; align-items: center; gap: 8px; }
-  .goal-text { font-size: 14px; font-weight: 500; word-break: break-word; }
-  .goal-meta { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-  .goal-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; }
-  .goal-badge.do { background: rgba(52,211,153,0.15); color: var(--green); }
-  .goal-badge.dont { background: rgba(248,113,113,0.15); color: var(--red); }
-  .oath-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; background: rgba(108,99,255,0.18); color: var(--accent2); border: 1px dashed rgba(167,139,250,0.55); }
-  .goal-mark { display: flex; gap: 8px; margin-top: 8px; }
-  .goal-result {
-    flex: 1; padding: 8px 0;
-    border-radius: var(--radius-sm); border: 1px solid var(--border);
-    background: transparent; color: var(--text-muted);
-    font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    transition: background var(--transition), color var(--transition), border-color var(--transition);
+  /* ── Daily goals (tiles) ── */
+  .goal-tiles { padding: 6px 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .goal-group { display: flex; flex-direction: column; gap: 8px; }
+  .goal-group-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 2px 0;
+    font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--text-muted);
   }
-  .goal-result.success:hover { border-color: var(--green); color: var(--green); }
-  .goal-result.fail:hover { border-color: var(--red); color: var(--red); }
-  .goal-result.success.active { background: rgba(52,211,153,0.18); border-color: var(--green); color: var(--green); }
-  .goal-result.fail.active { background: rgba(248,113,113,0.18); border-color: var(--red); color: var(--red); }
-  .goal-history-title { padding: 14px 16px 0; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); }
-  .goal-day { border-top: 1px solid var(--border); }
-  .goal-day summary { padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); list-style: none; display: flex; align-items: center; }
-  .goal-day summary::-webkit-details-marker { display: none; }
-  .goal-day summary::before { content: '▸'; color: var(--text-muted); margin-right: 6px; }
-  .goal-day[open] summary::before { content: '▾'; }
-  .goal-day-body { padding: 0 14px 8px; }
-  .goal-hist-entry { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
-  .goal-hist-entry .gh-mark { width: 16px; flex-shrink: 0; text-align: center; }
-  .goal-hist-entry.ok .gh-mark { color: var(--green); }
-  .goal-hist-entry.no .gh-mark { color: var(--red); }
-  .goal-hist-entry .gh-text { flex: 1; min-width: 0; word-break: break-word; }
-  .goal-hist-entry .gh-badge { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
-  .oath-dot { color: var(--accent2); }
-  .goal-hist-empty { padding: 8px 14px; font-size: 12px; color: var(--text-muted); }
+  .goal-group-head i { color: var(--text-muted); }
+  .goal-tile {
+    display: flex; flex-direction: column; gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+    transition: background var(--transition), border-color var(--transition);
+  }
+  .goal-tile-top { display: flex; align-items: center; }
+  .goal-tile-main { display: flex; align-items: center; gap: 8px; }
+  .goal-tile-text { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; word-break: break-word; line-height: 1.35; }
+  .goal-tile.is-ok { background: rgba(52,211,153,0.10); border-color: rgba(52,211,153,0.5); }
+  .goal-tile.is-no { background: rgba(248,113,113,0.10); border-color: rgba(248,113,113,0.5); }
+
+  /* Oath goals — impossible to miss */
+  .goal-tile.oath {
+    background: linear-gradient(180deg, rgba(251,191,36,0.16), rgba(248,113,113,0.10));
+    border: 2px solid var(--amber);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 2px 14px rgba(251,191,36,0.22);
+  }
+  .goal-tile.oath.is-ok { background: linear-gradient(90deg, rgba(52,211,153,0.18), rgba(251,191,36,0.12)); }
+  .goal-tile.oath.is-no { background: linear-gradient(90deg, rgba(248,113,113,0.24), rgba(251,191,36,0.12)); }
+  .oath-tag {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--amber); color: #1a1500;
+    font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    border-radius: 7px; padding: 4px 10px;
+    box-shadow: 0 1px 6px rgba(251,191,36,0.5);
+  }
+  .oath-tag i { font-size: 11px; }
+
+  .goal-tile-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .goal-tick {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+    font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+  }
+  .goal-tick:active { transform: scale(0.9); }
+  .goal-tick.ok:hover { border-color: var(--green); color: var(--green); }
+  .goal-tick.no:hover { border-color: var(--red); color: var(--red); }
+  .goal-tick.ok.on { background: rgba(52,211,153,0.22); border-color: var(--green); color: var(--green); }
+  .goal-tick.no.on { background: rgba(248,113,113,0.22); border-color: var(--red); color: var(--red); }
+
+  /* ── Past days (separate card) ── */
+  .past-empty { padding: 16px; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .past-day {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 10px;
+  }
+  .pd-head { display: flex; align-items: center; justify-content: space-between; }
+  .pd-date { font-weight: 700; font-size: 13px; }
+  .pd-stats { display: flex; gap: 8px; font-size: 12px; font-weight: 700; }
+  .pd-stats .ok { color: var(--green); }
+  .pd-stats .no { color: var(--red); }
+  .pd-rows { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 6px; }
+  .pd-row { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 13px; }
+  .pd-row .ico { width: 16px; text-align: center; flex-shrink: 0; }
+  .pd-row.ok .ico { color: var(--green); }
+  .pd-row.no .ico { color: var(--red); }
+  .pd-row .txt { flex: 1; min-width: 0; word-break: break-word; }
+  .pd-row .tag { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+  .oath-dot { color: var(--amber); font-weight: 700; }
 
   /* ── Modal select & checkbox fields ── */
   .modal-select {
@@ -1193,6 +1225,58 @@
     cursor: pointer; font-size: 13px; color: var(--text);
   }
   .modal-check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  /* ── Full goal history page ── */
+  .history-link {
+    display: flex; width: 100%; align-items: center; gap: 10px;
+    padding: 13px 16px;
+    background: none; border: none; border-top: 1px solid var(--border);
+    color: var(--text); text-align: left; cursor: pointer; font-family: inherit;
+    transition: background var(--transition);
+  }
+  .history-link:hover { background: rgba(255,255,255,0.03); }
+  .history-link:first-child { border-top: none; }
+  #history-overlay {
+    position: absolute; inset: 0;
+    background: var(--bg);
+    z-index: 218;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  }
+  #history-overlay.open { transform: translateX(0); }
+  #history-header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  #history-close {
+    width: 34px; height: 34px;
+    border: none; border-radius: 50%;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition), color var(--transition);
+  }
+  #history-close:hover { background: var(--border); color: var(--text); }
+  #history-title { font-size: 16px; font-weight: 700; flex: 1; }
+  #history-stats { flex-shrink: 0; padding: 14px 16px 0; }
+  #history-body { flex: 1; overflow-y: auto; padding: 0 16px 24px; }
+  .hist-chips { display: flex; gap: 8px; }
+  .hist-chip {
+    flex: 1;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 4px; text-align: center;
+  }
+  .hist-chip .v { font-size: 17px; font-weight: 800; color: var(--text); }
+  .hist-chip .l { font-size: 9px; color: var(--text-muted); letter-spacing: .4px; text-transform: uppercase; margin-top: 2px; }
+  .hist-chip.g .v { color: var(--green); }
+  .hist-chip.r .v { color: var(--red); }
+  .hist-chip.a .v { color: var(--amber); }
 </style>
 </head>
 <body>
@@ -1263,17 +1347,26 @@
 
     <!-- DAILY TAB -->
     <div id="tab-daily" class="tab-panel">
-      <!-- Goals -->
+      <!-- Goals (today) -->
       <div class="section-card" id="sec-goals">
         <div class="section-header">
           <span class="section-title">🎯 Goals</span>
           <button class="add-btn" data-action="add" data-section="goals"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
-        <div class="goal-today-header" id="goal-today-header"></div>
-        <div id="goal-summary"></div>
-        <div class="list-body" id="list-goals"></div>
-        <div class="goal-history-title">Past days</div>
-        <div class="list-body" id="list-goal-history"></div>
+        <div class="goal-tiles" id="list-goals"></div>
+      </div>
+      <!-- Past days -->
+      <div class="section-card" id="sec-past-goals">
+        <div class="section-header">
+          <span class="section-title">📅 Past Days</span>
+        </div>
+        <div class="history-link" data-action="open-history">
+          <div class="item-main">
+            <span class="item-title">Full history</span>
+            <span class="item-sub" id="goal-history-preview">No days recorded yet</span>
+          </div>
+          <i class="fa-solid fa-chevron-right overview-go"></i>
+        </div>
       </div>
       <!-- Activity Tracker -->
       <div class="section-card">
@@ -1479,6 +1572,18 @@
         </div>
         <div class="data-hint">Export saves everything to a JSON file you can keep or move to another device. Import replaces your current data with a backup file.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Goal history — full page -->
+  <div id="history-overlay">
+    <div id="history-header">
+      <button id="history-close"><i class="fa-solid fa-arrow-left"></i></button>
+      <span id="history-title">Past Days</span>
+    </div>
+    <div id="history-stats"></div>
+    <div id="history-body">
+      <div id="history-list"></div>
     </div>
   </div>
 
@@ -2298,93 +2403,132 @@ function syncTodayGoalText(goal) {
   if (e) { e.text = goal.text; e.kind = goal.kind; e.oath = !!goal.oath; save('goalResults'); }
 }
 
-function goalBadgeHtml(g) {
-  return g.kind === 'dont'
-    ? '<span class="goal-badge dont"><i class="fa-solid fa-hand"></i> Don\u2019t</span>'
-    : '<span class="goal-badge do"><i class="fa-solid fa-circle-check"></i> Do</span>';
-}
-function oathBadgeHtml(g) {
-  return g.oath ? '<span class="oath-badge"><i class="fa-solid fa-scale-balanced"></i> Oath</span>' : '';
-}
 function shortDay(dStr) {
   try { return new Date(dStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); }
   catch { return dStr; }
 }
 
+function goalTileHtml(g, r) {
+  const oathTag = g.oath
+    ? '<div class="goal-tile-top"><span class="oath-tag"><i class="fa-solid fa-scale-balanced"></i> Oath</span></div>'
+    : '';
+  return `
+    <div class="goal-tile${r === 'success' ? ' is-ok' : r === 'fail' ? ' is-no' : ''}${g.oath ? ' oath' : ''}">
+      ${oathTag}
+      <div class="goal-tile-main">
+        <span class="goal-tile-text">${escHtml(g.text)}</span>
+        <div class="goal-tile-actions">
+          <button class="goal-tick ok${r === 'success' ? ' on' : ''}" data-goal-result="${g.id}" data-result="success" title="Success"><i class="fa-solid fa-check"></i></button>
+          <button class="goal-tick no${r === 'fail' ? ' on' : ''}" data-goal-result="${g.id}" data-result="fail" title="Failed"><i class="fa-solid fa-xmark"></i></button>
+          ${editBtnHtml('goals', g.id)}
+          <button class="delete-btn" data-action="delete" data-section="goals" data-id="${g.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderGoals() {
   const listEl = document.getElementById('list-goals');
-  const headEl = document.getElementById('goal-today-header');
-  const sumEl  = document.getElementById('goal-summary');
-  const histEl = document.getElementById('list-goal-history');
-  if (!listEl || !sumEl) return;
-
-  if (headEl) headEl.textContent = 'Today — ' + shortDay(TODAY());
+  if (!listEl) return;
 
   const marks = todayGoalEntries();
-  const ok = marks.filter(m => m.result === 'success').length;
-  const no = marks.filter(m => m.result === 'fail').length;
-  const total = data.goals.length;
-  sumEl.innerHTML = total
-    ? `Today: <strong>${ok} ✓</strong> · <strong>${no} ✗</strong> · ${total - ok - no} unmarked`
-    : 'Tap the ⭐ add button (edit mode) to add your first goal';
-
-  listEl.innerHTML = '';
-  if (!total) {
-    listEl.innerHTML = emptyState('No goals yet — press ✏️ then Add to create some');
-    return;
-  }
   const resultMap = {};
   marks.forEach(m => resultMap[m.id] = m.result);
-  data.goals.forEach(g => {
-    const r = resultMap[g.id] || '';
-    const row = document.createElement('div');
-    row.className = 'goal-item fade-in' + (r === 'success' ? ' is-success' : r === 'fail' ? ' is-fail' : '');
-    row.innerHTML = `
-      <div class="goal-item-top">
-        <div class="item-main">
-          <span class="goal-text">${escHtml(g.text)}</span>
-          <div class="goal-meta">${goalBadgeHtml(g)}${oathBadgeHtml(g)}</div>
-        </div>
-        ${editBtnHtml('goals', g.id)}
-        <button class="delete-btn" data-action="delete" data-section="goals" data-id="${g.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
-      </div>
-      <div class="goal-mark">
-        <button class="goal-result success${r === 'success' ? ' active' : ''}" data-goal-result="${g.id}" data-result="success"><i class="fa-solid fa-check"></i> Success</button>
-        <button class="goal-result fail${r === 'fail' ? ' active' : ''}" data-goal-result="${g.id}" data-result="fail"><i class="fa-solid fa-xmark"></i> Failed</button>
-      </div>`;
-    listEl.appendChild(row);
-  });
 
-  renderGoalHistory(histEl);
-}
-
-function renderGoalHistory(histEl) {
-  if (!histEl) return;
-  histEl.innerHTML = '';
-  const today = TODAY();
-  const days = Object.keys(data.goalResults).filter(d => d !== today).sort().reverse().slice(0, 30);
-  if (!days.length) {
-    histEl.innerHTML = '<div class="goal-hist-empty">Registered days will appear here as you use it.</div>';
+  listEl.innerHTML = '';
+  if (!data.goals.length) {
+    listEl.innerHTML = emptyState('No goals yet — press ✏️ then Add to create some');
+    updateHistoryPreview();
     return;
   }
-  days.forEach(d => {
-    const entries = data.goalResults[d] || [];
-    const ok = entries.filter(e => e.result === 'success').length;
-    const no = entries.filter(e => e.result === 'fail').length;
-    const body = entries.length ? entries.map(e => `
-      <div class="goal-hist-entry ${e.result === 'success' ? 'ok' : e.result === 'fail' ? 'no' : ''}">
-        <span class="gh-mark">${e.result === 'success' ? '✓' : e.result === 'fail' ? '✗' : '·'}</span>
-        <span class="gh-text">${escHtml(e.text)}${e.oath ? ' <span class="oath-dot">⚖</span>' : ''}</span>
-        <span class="gh-badge">${e.kind === 'dont' ? 'Don\u2019t' : 'Do'}</span>
-      </div>`).join('')
-      : '<div class="goal-hist-empty">No marks</div>';
-    histEl.innerHTML += `
-      <details class="goal-day">
-        <summary>${shortDay(d)} · ${ok} ✓ · ${no} ✗</summary>
-        <div class="goal-day-body">${body}</div>
-      </details>`;
-  });
+  const group = (goals, label, icon) => {
+    if (!goals.length) return '';
+    return `
+      <div class="goal-group">
+        <div class="goal-group-head"><i class="fa-solid ${icon}"></i> ${label}</div>
+        ${goals.map(g => goalTileHtml(g, resultMap[g.id] || '')).join('')}
+      </div>`;
+  };
+  listEl.innerHTML = group(data.goals.filter(g => g.kind !== 'dont'), 'Things to do', 'fa-circle-check')
+    + group(data.goals.filter(g => g.kind === 'dont'), 'Things not to do', 'fa-hand');
+  updateHistoryPreview();
+  if (historyOverlay.classList.contains('open')) renderHistoryPage();
 }
+
+function pastDayCardHtml(d) {
+  const entries = data.goalResults[d] || [];
+  const ok = entries.filter(e => e.result === 'success').length;
+  const no = entries.filter(e => e.result === 'fail').length;
+  const rows = entries.length ? entries.map(e => `
+      <div class="pd-row ${e.result === 'success' ? 'ok' : e.result === 'fail' ? 'no' : ''}">
+        <span class="ico">${e.result === 'success' ? '✓' : e.result === 'fail' ? '✗' : '·'}</span>
+        <span class="txt">${escHtml(e.text)}${e.oath ? ' <span class="oath-dot">⚖</span>' : ''}</span>
+        <span class="tag">${e.kind === 'dont' ? 'Don\u2019t' : 'Do'}</span>
+      </div>`).join('')
+    : '<div class="past-empty">No marks that day</div>';
+  return `
+    <div class="past-day">
+      <div class="pd-head">
+        <span class="pd-date">${shortDay(d)}</span>
+        <span class="pd-stats"><span class="ok">${ok} ✓</span><span class="no">${no} ✗</span></span>
+      </div>
+      <div class="pd-rows">${rows}</div>
+    </div>`;
+}
+
+function updateHistoryPreview() {
+  const el = document.getElementById('goal-history-preview');
+  if (!el) return;
+  const today = TODAY();
+  const days = Object.keys(data.goalResults).filter(d => d !== today).sort().reverse();
+  if (!days.length) { el.textContent = 'No days recorded yet'; return; }
+  const entries = data.goalResults[days[0]] || [];
+  const ok = entries.filter(e => e.result === 'success').length;
+  const no = entries.filter(e => e.result === 'fail').length;
+  el.textContent = `${shortDay(days[0])} · ${ok} ✓ · ${no} ✗`;
+}
+
+function renderHistoryPage() {
+  const statsEl = document.getElementById('history-stats');
+  const listEl  = document.getElementById('history-list');
+  if (!statsEl || !listEl) return;
+  const today = TODAY();
+  const days = Object.keys(data.goalResults).filter(d => d !== today).sort().reverse();
+
+  let succ = 0, fail = 0;
+  days.forEach(d => (data.goalResults[d] || []).forEach(e => {
+    if (e.result === 'success') succ++;
+    else if (e.result === 'fail') fail++;
+  }));
+  const total = succ + fail;
+  const rate = total ? Math.round(succ / total * 100) : 0;
+
+  statsEl.innerHTML = days.length ? `
+    <div class="hist-chips">
+      <div class="hist-chip g"><div class="v">${succ}</div><div class="l">Success</div></div>
+      <div class="hist-chip r"><div class="v">${fail}</div><div class="l">Failed</div></div>
+      <div class="hist-chip"><div class="v">${rate}%</div><div class="l">Success rate</div></div>
+      <div class="hist-chip a"><div class="v">${days.length}</div><div class="l">Days</div></div>
+    </div>` : '';
+
+  listEl.innerHTML = '';
+  if (!days.length) {
+    listEl.innerHTML = '<div class="past-empty">Nothing here yet — when a day is over, it gets saved here with the ✓ / ✗ results.</div>';
+    return;
+  }
+  days.forEach(d => { listEl.innerHTML += pastDayCardHtml(d); });
+}
+
+const historyOverlay = document.getElementById('history-overlay');
+function openHistory() {
+  renderHistoryPage();
+  historyOverlay.classList.add('open');
+  pushBackGuard('history');
+}
+function closeHistory() {
+  historyOverlay.classList.remove('open');
+}
+document.getElementById('history-close').addEventListener('click', closeHistory);
 
 // Goal result buttons (always visible, no edit mode needed)
 document.getElementById('list-goals').addEventListener('click', e => {
@@ -2991,6 +3135,7 @@ document.getElementById('content').addEventListener('click', e => {
   if (action === 'add-activity') { addActivity(); return; }
   if (action === 'edit')   { openModal(section, id); return; }
   if (action === 'goto-tab') { switchTab(btn.dataset.tab); return; }
+  if (action === 'open-history') { openHistory(); return; }
   if (action === 'delete') { deleteItem(section, id); return; }
   if (action === 'pin')    { togglePin(section, id); return; }
   if (action === 'set-school-status') {
@@ -3452,6 +3597,14 @@ window.addEventListener('popstate', (e) => {
   // Priority 0: if activity history modal is open, close it
   if (activityModalOverlay.classList.contains('open')) {
     closeActivityModal();
+    _lastBackTime = 0;
+    pushBackGuard('base');
+    return;
+  }
+
+  // Priority 0.35: if goal history page is open, close it
+  if (historyOverlay.classList.contains('open')) {
+    closeHistory();
     _lastBackTime = 0;
     pushBackGuard('base');
     return;
