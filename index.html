@@ -1086,7 +1086,6 @@
   .eatout-stat .v { font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; }
   .eatout-stat .l { font-size: 9px; color: var(--text-muted); letter-spacing: .4px; text-transform: uppercase; margin-top: 2px; }
   .eatout-stat.est .v { color: var(--accent2); }
-  .eatout-foot { padding: 6px 0 10px; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
   .eat-amount { font-weight: 700; font-size: 13px; color: var(--green); flex-shrink: 0; }
   .eat-row-edit, .eat-row-del {
     width: 28px; height: 28px;
@@ -2297,25 +2296,25 @@ function renderEatOut() {
     return d !== 0 ? d : ((b.ts || 0) - (a.ts || 0)); // same day → newest logged first
   });
   // Monthly summary — entries in the current calendar month
-  const monthKey = TODAY().slice(0, 7);
-  const month = data.eatOuts.filter(e => (e.date || '').startsWith(monthKey));
-  const total   = month.reduce((s, e) => s + (e.amount || 0), 0);
-  const eatDays = new Set(month.map(e => e.date)).size;   // distinct days you ate out
-  const nowDate = TODAY();
-  const dayOfMonth = parseInt(nowDate.slice(8, 10), 10) || 1;
-  const daysInMonth = new Date(parseInt(nowDate.slice(0, 4), 10), parseInt(nowDate.slice(5, 7), 10), 0).getDate();
-  // Estimate: keep today's pace for the whole month → (total ÷ days so far) × days in month
-  const est = Math.round((total / dayOfMonth) * daysInMonth);
+  const todayStr  = TODAY();
+  const monthKey  = todayStr.slice(0, 7);
+  const month     = data.eatOuts.filter(e => (e.date || '').startsWith(monthKey));
+  const monthTotal = month.reduce((s, e) => s + (e.amount || 0), 0);
+  // Pace & estimate use ONLY fully finished days — today isn't over yet, so it's
+  // excluded (keeps "yesterday's math" until the date changes).
+  const done      = month.filter(e => (e.date || '') < todayStr);
+  const doneTotal = done.reduce((s, e) => s + (e.amount || 0), 0);
+  const dayOfMonth  = parseInt(todayStr.slice(8, 10), 10) || 1;
+  const daysInMonth = new Date(parseInt(todayStr.slice(0, 4), 10), parseInt(todayStr.slice(5, 7), 10), 0).getDate();
+  const elapsed = dayOfMonth - 1;                       // completed days this month so far
+  const est = elapsed > 0 ? Math.round((doneTotal / elapsed) * daysInMonth) : null;
 
   sumEl.innerHTML = `
     <div class="eatout-stats">
       <div class="eatout-stat"><div class="v">${month.length}</div><div class="l">Eat-outs</div></div>
-      <div class="eatout-stat"><div class="v">${fmtKr(total)}</div><div class="l">Spent</div></div>
-      <div class="eatout-stat est"><div class="v">${month.length ? '~' + est.toLocaleString() + ' kr' : '—'}</div><div class="l">Est. food month</div></div>
-    </div>
-    <div class="eatout-foot">${month.length
-      ? `Pace: ${eatDays} eat-out day${eatDays === 1 ? '' : 's'} out of ${dayOfMonth} day${dayOfMonth === 1 ? '' : 's'} · ≈ ${est.toLocaleString()} kr for the whole month if you keep this up`
-      : 'No eat-outs logged this month yet'}</div>`;
+      <div class="eatout-stat"><div class="v">${fmtKr(monthTotal)}</div><div class="l">Spent</div></div>
+      <div class="eatout-stat est"><div class="v">${est === null ? '—' : '~' + est.toLocaleString() + ' kr'}</div><div class="l">Est. food month</div></div>
+    </div>`;
   listEl.innerHTML = '';
   if (!sorted.length) {
     listEl.innerHTML = emptyState('No eat-out entries yet — tap 91 kr or 163 kr to log one');
