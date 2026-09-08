@@ -1328,6 +1328,7 @@
   }
   .eo-limit-input:focus { border-color: var(--accent); }
   .eatout-stat.warn .v { color: var(--red); }
+  .eatout-stats.row2 { margin-top: 6px; }
   #eatout-months { border-top: 1px solid var(--border); margin-top: 4px; padding-bottom: 6px; }
   .em-title { padding: 10px 16px 2px; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); }
   .em-row {
@@ -1642,7 +1643,7 @@
           <span class="section-title">🍽 Eat Out</span>
         </div>
         <label class="notif-row" style="cursor:default;">
-          <span><strong>Monthly limit</strong><small>Max eat-outs per month — powers the “Left” counter (blank = no limit)</small></span>
+          <span><strong>Monthly budget</strong><small>How much you can spend eating out per month (kr) — blank = no limit</small></span>
           <input type="number" id="eo-limit" class="eo-limit-input" min="0" step="1" placeholder="∞">
         </label>
       </div>
@@ -2352,7 +2353,7 @@ function deleteActivityLog(logId) {
 
 /* ── Eat Out tracker — log how often you eat out & what it costs ── */
 function fmtKr(a) { return (Math.round((a || 0) * 100) / 100) + ' kr'; }
-function getEatOutLimit() { const v = parseInt(LS.get('lm_eatout_limit', ''), 10); return (!isNaN(v) && v > 0) ? v : null; }
+function getEatOutBudget() { const v = parseFloat(LS.get('lm_eatout_budget', '')); return (!isNaN(v) && v > 0) ? v : null; }
 
 function addEatOut(amount) {
   const a = parseFloat(amount);
@@ -2390,16 +2391,31 @@ function renderEatOut() {
   const daysInMonth = new Date(parseInt(todayStr.slice(0, 4), 10), parseInt(todayStr.slice(5, 7), 10), 0).getDate();
   const elapsed = dayOfMonth - 1;                       // completed days this month so far
   const est = elapsed > 0 ? Math.round((doneTotal / elapsed) * daysInMonth) : null;
-  const limit = getEatOutLimit();
-  const left  = limit === null ? null : Math.max(0, limit - month.length);
+  const budget = getEatOutBudget();
+  const moneyLeft = budget === null ? null : Math.max(0, budget - monthTotal);
+  // average cost per eat-out: this month first, else overall
+  const totalAll  = data.eatOuts.reduce((sx, e) => sx + (e.amount || 0), 0);
+  const countAll  = data.eatOuts.length;
+  const avgCost = month.length ? monthTotal / month.length : (countAll ? totalAll / countAll : null);
+  const eatOutsLeft = (moneyLeft !== null && avgCost) ? Math.floor(moneyLeft / avgCost) : null;
+  const daysRemaining = daysInMonth - dayOfMonth + 1;
+  const nextIn = (eatOutsLeft !== null && eatOutsLeft > 0) ? Math.max(1, Math.ceil(daysRemaining / eatOutsLeft)) : null;
 
+  let budgetRow = '';
+  if (moneyLeft !== null) {
+    budgetRow = `
+    <div class="eatout-stats row2">
+      <div class="eatout-stat"><div class="v">≈ ${eatOutsLeft === null ? '—' : eatOutsLeft}</div><div class="l">Eat-outs left</div></div>
+      <div class="eatout-stat${nextIn === null ? ' warn' : ''}"><div class="v">${nextIn === null ? '—' : '~' + nextIn + ' days'}</div><div class="l">Next eat-out</div></div>
+    </div>`;
+  }
   sumEl.innerHTML = `
     <div class="eatout-stats">
       <div class="eatout-stat"><div class="v">${month.length}</div><div class="l">Eat-outs</div></div>
-      <div class="eatout-stat${left === 0 ? ' warn' : ''}"><div class="v">${left === null ? '∞' : left}</div><div class="l">Left this month</div></div>
       <div class="eatout-stat"><div class="v">${fmtKr(monthTotal)}</div><div class="l">Spent</div></div>
+      <div class="eatout-stat${moneyLeft === 0 ? ' warn' : ''}"><div class="v">${moneyLeft === null ? '∞' : fmtKr(moneyLeft)}</div><div class="l">Money left</div></div>
       <div class="eatout-stat est"><div class="v">${est === null ? '—' : '~' + est.toLocaleString() + ' kr'}</div><div class="l">Est. food month</div></div>
-    </div>`;
+    </div>${budgetRow}`;
   renderEatOutMonths();
   listEl.innerHTML = '';
   if (!sorted.length) {
@@ -3707,7 +3723,7 @@ function renderNotifPanel() {
   const ovGetto = document.getElementById('ov-getto');
   if (ovGetto) ovGetto.checked = getOverviewGettoPref();
   const eoLimit = document.getElementById('eo-limit');
-  if (eoLimit) eoLimit.value = getEatOutLimit() === null ? '' : getEatOutLimit();
+  if (eoLimit) eoLimit.value = getEatOutBudget() === null ? '' : getEatOutBudget();
 }
 
 function notifSaveFeedback() {
@@ -3763,7 +3779,7 @@ settingsOverlay.addEventListener('change', e => {
   }
   if (id === 'eo-limit') {
     const v = e.target.value.trim();
-    LS.set('lm_eatout_limit', v ? String(parseInt(v, 10) || 1) : '');
+    LS.set('lm_eatout_budget', v ? String(parseFloat(v)) : '');
     renderEatOut();
     return;
   }
@@ -3814,7 +3830,7 @@ settingsOverlay.addEventListener('input', e => {
   if (id === 'nf-exams-days') prefs.exams.days = Math.max(1, parseInt(e.target.value, 10) || 1);
   if (id === 'nf-activity-days') prefs.activity.days = Math.max(1, parseInt(e.target.value, 10) || 1);
   if (id === 'nf-review-time') prefs.review.time = e.target.value || '22:00';
-  if (id === 'eo-limit') { const v = e.target.value.trim(); LS.set('lm_eatout_limit', v ? String(parseInt(v, 10) || 1) : ''); renderEatOut(); }
+  if (id === 'eo-limit') { const v = e.target.value.trim(); LS.set('lm_eatout_budget', v ? String(parseFloat(v)) : ''); renderEatOut(); }
   saveNotifPrefs(prefs);
   notifSaveFeedback();
 });
