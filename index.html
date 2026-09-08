@@ -83,7 +83,7 @@
     color: var(--text);
   }
 
-  #edit-btn, #settings-btn {
+  #edit-btn, #settings-btn, #refresh-btn {
     width: 38px; height: 38px;
     border-radius: 50%;
     border: none;
@@ -94,7 +94,7 @@
     display: flex; align-items: center; justify-content: center;
     transition: background var(--transition), color var(--transition), transform var(--transition);
   }
-  #edit-btn:hover, #settings-btn:hover { background: var(--border); color: var(--text); }
+  #edit-btn:hover, #settings-btn:hover, #refresh-btn:hover { background: var(--border); color: var(--text); }
   #edit-btn.active { background: var(--accent); color: #fff; transform: scale(1.05); }
   #settings-btn.on { color: var(--accent2); }
 
@@ -1284,6 +1284,31 @@
   .hist-chip.g .v { color: var(--green); }
   .hist-chip.r .v { color: var(--red); }
   .hist-chip.a .v { color: var(--amber); }
+
+  /* goals: plan bar + picker */
+  .goal-planbar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 16px 2px; flex-wrap:wrap; }
+  .pb-title { font-size:12px; color:var(--text-muted); font-weight:600; }
+  .pb-title strong { color: var(--accent2); }
+  .pb-actions { display:flex; gap:6px; }
+  .pb-btn { border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:12px; font-weight:700; font-family:inherit; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  .pb-btn:hover { background: var(--border); }
+  .pb-btn.ghost { background:transparent; color:var(--text-muted); }
+  .goal-tile.pick { cursor:pointer; }
+  .goal-tile.pick .pick-ring { flex-shrink:0; width:26px; height:26px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; color:transparent; transition: all var(--transition); }
+  .goal-tile.pick.picked { border-color: var(--accent); }
+  .goal-tile.pick.picked .pick-ring { background: var(--accent); border-color: var(--accent); color:#fff; }
+  /* daily reminders */
+  .rem-btn { width:28px; height:28px; border:none; border-radius: var(--radius-sm); background: var(--surface2); color: var(--text-muted); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background var(--transition), color var(--transition); }
+  .rem-btn.done:hover { background: rgba(52,211,153,0.2); color: var(--green); }
+  .rem-btn.reopen:hover { background: var(--border); color: var(--text); }
+  .countdown.dim { background: var(--surface2); color: var(--text-muted); }
+  /* history result marks */
+  .pd-row .ico { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+  .pd-row.ok .ico { background: rgba(52,211,153,0.18); color: var(--green); }
+  .pd-row.no .ico { background: rgba(248,113,113,0.18); color: var(--red); }
+  .pd-stats .stat { display:inline-flex; align-items:center; gap:4px; font-size:12px; }
+  .pd-stats .stat.ok { color: var(--green); }
+  .pd-stats .stat.no { color: var(--red); }
 </style>
 </head>
 <body>
@@ -1293,6 +1318,7 @@
   <header id="header">
     <span id="tab-title">Overview</span>
     <div class="header-actions">
+      <button id="refresh-btn" title="Reload app"><i class="fa-solid fa-rotate-right"></i></button>
       <button id="settings-btn" title="Settings"><i class="fa-solid fa-gear"></i></button>
       <button id="edit-btn" title="Toggle edit mode"><i class="fa-solid fa-pen"></i></button>
     </div>
@@ -1360,6 +1386,7 @@
           <span class="section-title">🎯 Goals</span>
           <button class="add-btn" data-action="add" data-section="goals"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
+        <div class="goal-planbar" id="goal-planbar"></div>
         <div class="goal-tiles" id="list-goals"></div>
       </div>
       <!-- Past days -->
@@ -1374,6 +1401,14 @@
           </div>
           <i class="fa-solid fa-chevron-right overview-go"></i>
         </div>
+      </div>
+      <!-- Reminders -->
+      <div class="section-card" id="sec-reminders">
+        <div class="section-header">
+          <span class="section-title">⏰ Reminders</span>
+          <button class="add-btn" data-action="add" data-section="reminders"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-reminders"></div>
       </div>
       <!-- Activity Tracker -->
       <div class="section-card">
@@ -1551,10 +1586,6 @@
           <span>days</span>
         </div>
         <label class="notif-row">
-          <input type="checkbox" id="nf-problems">
-          <span><strong>🗂 Problems</strong><small>Remind to review uncategorized problems</small></span>
-        </label>
-        <label class="notif-row">
           <input type="checkbox" id="nf-review">
           <span><strong>🌙 End-of-day review</strong><small>Remind to mark today's goals &amp; log any eat-out</small></span>
         </label>
@@ -1669,6 +1700,8 @@ const data = {
   rules:    LS.get('lm_rules',    DEFAULTS.rules),
   goals:    LS.get('lm_goals',    DEFAULTS.goals),   // goal pool: [{id, text, kind:'do'|'dont', oath:bool}]
   goalResults: LS.get('lm_goalResults', {}),         // { 'YYYY-MM-DD': [{id, text, kind, oath, result:'success'|'fail'}] }
+  goalPlan:    LS.get('lm_goalPlan', {}),              // { 'YYYY-MM-DD': [goalId, ...] } — goals committed for that day
+  reminders:   LS.get('lm_reminders', []),             // [{id, title, date, done}]
   notes:    LS.get('lm_notes',    DEFAULTS.notes),
   notes2:   LS.get('lm_notes2',   ''),
   notes3:   LS.get('lm_notes3',   ''),
@@ -1769,6 +1802,7 @@ function countdownLabel(days) {
 // ── DOM references ──
 const editBtn       = document.getElementById('edit-btn');
 const settingsBtn   = document.getElementById('settings-btn');
+const refreshBtn    = document.getElementById('refresh-btn');
 const tabTitle      = document.getElementById('tab-title');
 const bottomNav     = document.getElementById('bottom-nav');
 const modalOverlay  = document.getElementById('modal-overlay');
@@ -2436,7 +2470,7 @@ function shortDay(dStr) {
   catch { return dStr; }
 }
 
-function goalTileHtml(g, r) {
+function markTileHtml(g, r) {
   const oathTag = g.oath
     ? '<div class="goal-tile-top"><span class="oath-tag"><i class="fa-solid fa-scale-balanced"></i> Oath</span></div>'
     : '';
@@ -2455,30 +2489,102 @@ function goalTileHtml(g, r) {
     </div>`;
 }
 
+function pickerTileHtml(g) {
+  const sel = goalDraft.has(g.id);
+  const oathTag = g.oath
+    ? '<div class="goal-tile-top"><span class="oath-tag"><i class="fa-solid fa-scale-balanced"></i> Oath</span></div>'
+    : '';
+  return `
+    <div class="goal-tile pick${sel ? ' picked' : ''}${g.oath ? ' oath' : ''}" data-goal-toggle="${g.id}">
+      ${oathTag}
+      <div class="goal-tile-main">
+        <span class="goal-tile-text">${escHtml(g.text)}</span>
+        <span class="pick-ring"><i class="fa-solid fa-check"></i></span>
+      </div>
+    </div>`;
+}
+
+// Goals committed for a given day (null = not planned yet)
+function goalPlanFor(date) {
+  return Object.prototype.hasOwnProperty.call(data.goalPlan, date) ? data.goalPlan[date] : null;
+}
+
+function commitGoalPlan(ids) {
+  const today = TODAY();
+  data.goalPlan[today] = ids.slice();
+  // Marks only stay for goals that are still in today's plan
+  data.goalResults[today] = (data.goalResults[today] || []).filter(e => ids.includes(e.id));
+  save('goalPlan');
+  save('goalResults');
+}
+
+let goalPlanEditing = false;
+let goalDraft = new Set();
+
 function renderGoals() {
   const listEl = document.getElementById('list-goals');
+  const barEl  = document.getElementById('goal-planbar');
   if (!listEl) return;
+
+  const today = TODAY();
+  let plan = goalPlanFor(today);
+  if (plan === null && !goalPlanEditing && data.goals.length) {
+    goalPlanEditing = true;
+    goalDraft = new Set(data.goals.map(g => g.id));
+  }
+  const picking = goalPlanEditing && data.goals.length > 0;
+  const visibleIds = picking ? null : new Set(plan || []);
 
   const marks = todayGoalEntries();
   const resultMap = {};
   marks.forEach(m => resultMap[m.id] = m.result);
 
+  if (barEl) {
+    barEl.innerHTML = '';
+    if (data.goals.length) {
+      if (picking) {
+        barEl.innerHTML = `
+          <span class="pb-title">Pick which goals you'll try today</span>
+          <span class="pb-actions">
+            <button class="pb-btn ghost" data-goal-plan="all">All</button>
+            <button class="pb-btn ghost" data-goal-plan="none">None</button>
+            <button class="pb-btn" data-goal-plan="commit">Commit ${goalDraft.size}</button>
+          </span>`;
+      } else {
+        const n = plan ? plan.length : 0;
+        barEl.innerHTML = `
+          <span class="pb-title">Committed today: <strong>${n}</strong> of ${data.goals.length}</span>
+          <button class="pb-btn ghost" data-goal-plan="edit">Change</button>`;
+      }
+    }
+  }
+
   listEl.innerHTML = '';
   if (!data.goals.length) {
     listEl.innerHTML = emptyState('No goals yet — press ✏️ then Add to create some');
     updateHistoryPreview();
+    if (historyOverlay.classList.contains('open')) renderHistoryPage();
     return;
   }
+
+  const tileHtml = g => picking ? pickerTileHtml(g) : markTileHtml(g, resultMap[g.id] || '');
+  const visible = picking ? data.goals : data.goals.filter(g => !!(visibleIds && visibleIds.has(g.id)));
   const group = (goals, label, icon) => {
     if (!goals.length) return '';
     return `
       <div class="goal-group">
         <div class="goal-group-head"><i class="fa-solid ${icon}"></i> ${label}</div>
-        ${goals.map(g => goalTileHtml(g, resultMap[g.id] || '')).join('')}
+        ${goals.map(tileHtml).join('')}
       </div>`;
   };
-  listEl.innerHTML = group(data.goals.filter(g => g.kind !== 'dont'), 'Things to do', 'fa-circle-check')
-    + group(data.goals.filter(g => g.kind === 'dont'), 'Things not to do', 'fa-hand');
+
+  if (!picking && !visible.length) {
+    listEl.innerHTML = '<div class="past-empty">No goals committed for today — tap Change to pick some.</div>';
+  } else {
+    listEl.innerHTML = group(visible.filter(g => g.kind !== 'dont'), 'Things to do', 'fa-circle-check')
+      + group(visible.filter(g => g.kind === 'dont'), 'Things not to do', 'fa-hand');
+  }
+
   updateHistoryPreview();
   if (historyOverlay.classList.contains('open')) renderHistoryPage();
 }
@@ -2489,7 +2595,7 @@ function pastDayCardHtml(d) {
   const no = entries.filter(e => e.result === 'fail').length;
   const rows = entries.length ? entries.map(e => `
       <div class="pd-row ${e.result === 'success' ? 'ok' : e.result === 'fail' ? 'no' : ''}">
-        <span class="ico">${e.result === 'success' ? '✓' : e.result === 'fail' ? '✗' : '·'}</span>
+        <span class="ico ${e.result === 'success' ? 'ok' : e.result === 'fail' ? 'no' : ''}"><i class="fa-solid ${e.result === 'success' ? 'fa-check' : e.result === 'fail' ? 'fa-xmark' : 'fa-minus'}"></i></span>
         <span class="txt">${escHtml(e.text)}${e.oath ? ' <span class="oath-dot">⚖</span>' : ''}</span>
         <span class="tag">${e.kind === 'dont' ? 'Don\u2019t' : 'Do'}</span>
       </div>`).join('')
@@ -2498,7 +2604,7 @@ function pastDayCardHtml(d) {
     <div class="past-day">
       <div class="pd-head">
         <span class="pd-date">${shortDay(d)}</span>
-        <span class="pd-stats"><span class="ok">${ok} ✓</span><span class="no">${no} ✗</span></span>
+        <span class="pd-stats"><span class="stat ok"><i class="fa-solid fa-circle-check"></i> ${ok}</span><span class="stat no"><i class="fa-solid fa-circle-xmark"></i> ${no}</span></span>
       </div>
       <div class="pd-rows">${rows}</div>
     </div>`;
@@ -2558,10 +2664,86 @@ function closeHistory() {
 }
 document.getElementById('history-close').addEventListener('click', closeHistory);
 
-// Goal result buttons (always visible, no edit mode needed)
-document.getElementById('list-goals').addEventListener('click', e => {
+// Goals card interactions: plan / picker toggles / daily ✓✗ marks
+function commitDraft() {
+  commitGoalPlan([...goalDraft]);
+  goalPlanEditing = false;
+  renderGoals();
+}
+document.getElementById('sec-goals').addEventListener('click', e => {
+  const p = e.target.closest('[data-goal-plan]');
+  if (p) {
+    const v = p.dataset.goalPlan;
+    if (v === 'commit') commitDraft();
+    else if (v === 'edit') { goalPlanEditing = true; goalDraft = new Set(goalPlanFor(TODAY()) || []); renderGoals(); }
+    else if (v === 'all') { goalDraft = new Set(data.goals.map(g => g.id)); renderGoals(); }
+    else if (v === 'none') { goalDraft = new Set(); renderGoals(); }
+    return;
+  }
+  const tg = e.target.closest('[data-goal-toggle]');
+  if (tg) {
+    const id = tg.dataset.goalToggle;
+    if (goalDraft.has(id)) goalDraft.delete(id); else goalDraft.add(id);
+    renderGoals();
+    return;
+  }
   const b = e.target.closest('[data-goal-result]');
   if (b) setGoalResult(b.dataset.goalResult, b.dataset.result);
+});
+
+/* ── ⏰ Reminders (Daily tab) — things due in days / weeks / months ── */
+function renderReminders() {
+  const listEl = document.getElementById('list-reminders');
+  if (!listEl) return;
+  const today = TODAY();
+  const order = [...data.reminders].sort((a, b) => {
+    if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+    return (a.date || '').localeCompare(b.date || '');
+  });
+  listEl.innerHTML = '';
+  if (!data.reminders.length) {
+    listEl.innerHTML = emptyState('No reminders — add things due in days or weeks');
+    return;
+  }
+  order.forEach(r => {
+    const days = r.date ? daysUntil(r.date) : NaN;
+    let badge = '';
+    if (r.done) badge = '<span class="countdown dim">Done</span>';
+    else if (isNaN(days)) badge = '<span class="countdown dim">No date</span>';
+    else if (days < 0) badge = '<span class="countdown red">Overdue</span>';
+    else if (days === 0) badge = '<span class="countdown red">Today</span>';
+    else if (days === 1) badge = '<span class="countdown amber">1 day</span>';
+    else badge = '<span class="countdown green">' + days + ' days</span>';
+    const toggle = r.done
+      ? '<button class="rem-btn reopen" data-reopen-rem="' + r.id + '" title="Reopen"><i class="fa-solid fa-rotate-left"></i></button>'
+      : '<button class="rem-btn done" data-done-rem="' + r.id + '" title="Mark done"><i class="fa-solid fa-check"></i></button>';
+    listEl.innerHTML += `
+      <div class="list-item${r.done ? ' status-done' : ''}" data-rem-id="${r.id}">
+        <div class="item-main">
+          <span class="item-title">${escHtml(r.title)}</span>
+          <div class="item-sub">${escHtml(r.date || 'no due date')}</div>
+        </div>
+        ${badge}
+        ${toggle}
+        ${editBtnHtml('reminders', r.id)}
+        <button class="delete-btn" data-action="delete" data-section="reminders" data-id="${r.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+      </div>`;
+  });
+}
+
+function setReminderDone(id, done) {
+  const r = data.reminders.find(x => x.id === id);
+  if (!r) return;
+  r.done = done;
+  save('reminders');
+  renderReminders();
+}
+
+document.getElementById('sec-reminders').addEventListener('click', e => {
+  const d = e.target.closest('[data-done-rem]');
+  if (d) { setReminderDone(d.dataset.doneRem, true); return; }
+  const r = e.target.closest('[data-reopen-rem]');
+  if (r) { setReminderDone(r.dataset.reopenRem, false); return; }
 });
 
 /* ── Overview — everything prioritized across tabs ──
@@ -2669,6 +2851,7 @@ function renderAll() {
   renderActivities();
   renderEatOut();
   renderGoals();
+  renderReminders();
   renderChecklist('rehab');
   renderChecklist('motion');
   renderPhysics();
@@ -2783,6 +2966,7 @@ function switchTab(tab) {
   const isOverview = (tab === 'overview');
   editBtn.style.display    = isOverview ? 'none' : '';
   settingsBtn.style.display = isOverview ? '' : 'none';
+  refreshBtn.style.display  = isOverview ? '' : 'none';
   document.getElementById('content').scrollTop = 0;
 }
 
@@ -2817,6 +3001,7 @@ function renderSection(section) {
     case 'motion':   renderChecklist('motion'); break;
     case 'physics':  renderPhysics(); break;
     case 'goals':    renderGoals(); break;
+    case 'reminders': renderReminders(); break;
     case 'problems': renderProblems(); break;
     case 'rules':    renderSimpleList('rules', document.getElementById('list-rules')); break;
   }
@@ -2828,10 +3013,12 @@ function deleteItem(section, id) {
   data[section] = data[section].filter(x => x.id !== id);
   if (section === 'problems') { delete data.probNotes[id]; save('probNotes'); }
   if (section === 'goals') {
-    // remove today's mark too; past days' records stay as history
+    // remove today's mark/plan too; past days' records stay as history
     const t = TODAY();
     if (data.goalResults[t]) data.goalResults[t] = data.goalResults[t].filter(e => e.id !== id);
+    if (Array.isArray(data.goalPlan[t])) data.goalPlan[t] = data.goalPlan[t].filter(x => x !== id);
     save('goalResults');
+    save('goalPlan');
   }
   save(section);
   renderSection(section);
@@ -2869,6 +3056,7 @@ const MODAL_CONFIGS = {
                 { id:'kind', label:'Type', type:'select', options: [{ value:'do', label:'✅ Do this' }, { value:'dont', label:'🚫 Don\u2019t do this' }] },
                 { id:'oath', label:'I swore an oath not to do this', type:'checkbox' }
               ]},
+  reminders:{ title: 'Add Reminder',   fields: [{ id:'title', label:'What do you need to do?', type:'text', placeholder:'e.g. Pay rent / Dentist' }, { id:'date', label:'Due date', type:'date' }] },
   problems: { title: 'Add Problem',   fields: [{ id:'title', label:'Problem', type:'text', placeholder:'' }] },
   rules:    { title: 'Add Rule',      fields: [{ id:'title', label:'Rule', type:'text', placeholder:'e.g. No phone after 10pm' }] },
   activities: { title: 'Edit Activity', fields: [{ id:'title', label:'Activity name', type:'text', placeholder:'' }] },
@@ -3243,7 +3431,6 @@ const NOTIF_PREFS_DEFAULT = {
   exams:    { on: true, days: 3 },
   health:   { on: true, time: '18:00' },
   activity: { on: true, time: '21:00', days: 7 },
-  problems: { on: true },
   review:   { on: true, time: '22:00' }
 };
 
@@ -3302,7 +3489,7 @@ function notifCheck() {
 
   const today = TODAY();
   let fired = LS.get('lm_notif_fired', {});
-  if (fired.date !== today) fired = { date: today, exams: {}, health: false, activity: false, problems: false, review: false };
+  if (fired.date !== today) fired = { date: today, exams: {}, health: false, activity: false, review: false, reminders: {} };
 
   if (prefs.exams.on) {
     data.exams.forEach(ex => {
@@ -3356,18 +3543,28 @@ function notifCheck() {
     fired.activity = true;
   }
 
-  if (prefs.problems.on && !fired.problems) {
-    const uncat = statusCounts().uncat;
-    if (uncat > 0) {
-      sendNotif('🗂 Problem review', 'You have ' + uncat + ' uncategorized problem' + (uncat === 1 ? '' : 's') + ' — tap Review to triage them', 'problems', 'problems');
-      fired.problems = true;
+  // ⏰ Reminders — nudge the day before / on the day, and keep nagging when overdue
+  if (!fired.reminders) fired.reminders = {};
+  data.reminders.forEach(r => {
+    if (r.done || fired.reminders[r.id]) return;
+    const d = daysUntil(r.date || '');
+    if (isNaN(d)) return;
+    if (d <= 1) {
+      const when = d < 0 ? 'is overdue' : d === 0 ? 'is due today' : 'is due tomorrow';
+      sendNotif('⏰ Reminder', r.title + ' ' + when, 'rem-' + r.id, 'daily');
+      fired.reminders[r.id] = true;
     }
-  }
+  });
 
   // End-of-day review — remind to mark goals and log any eat-out before the day ends
   if (prefs.review.on && !fired.review && pastTime(prefs.review.time || '22:00')) {
-    const marked = todayGoalEntries().length;
-    const unmarked = Math.max(0, data.goals.length - marked);
+    const plan = goalPlanFor(today);
+    const markedIds = new Set(todayGoalEntries().map(e => e.id));
+    let unmarked = 0;
+    if (data.goals.length) {
+      const target = plan === null ? data.goals.map(g => g.id) : plan;
+      unmarked = target.filter(id => !markedIds.has(id)).length;
+    }
     const ateOutToday = data.eatOuts.some(e => (e.date || '') === today);
     const bits = [];
     if (unmarked > 0) bits.push(unmarked + ' goal' + (unmarked === 1 ? '' : 's') + ' not marked yet');
@@ -3419,7 +3616,6 @@ function renderNotifPanel() {
   document.getElementById('nf-activity').checked = !!prefs.activity.on;
   document.getElementById('nf-activity-time').value = prefs.activity.time || '21:00';
   document.getElementById('nf-activity-days').value = prefs.activity.days;
-  document.getElementById('nf-problems').checked = !!prefs.problems.on;
   document.getElementById('nf-review').checked = !!prefs.review.on;
   document.getElementById('nf-review-time').value = prefs.review.time || '22:00';
 
@@ -3512,7 +3708,6 @@ settingsOverlay.addEventListener('change', e => {
   if (id === 'nf-activity') prefs.activity.on = e.target.checked;
   if (id === 'nf-activity-time') prefs.activity.time = e.target.value || '21:00';
   if (id === 'nf-activity-days') prefs.activity.days = Math.max(1, parseInt(e.target.value, 10) || 1);
-  if (id === 'nf-problems') prefs.problems.on = e.target.checked;
   if (id === 'nf-review') prefs.review.on = e.target.checked;
   if (id === 'nf-review-time') prefs.review.time = e.target.value || '22:00';
   saveNotifPrefs(prefs);
@@ -3538,8 +3733,15 @@ settingsOverlay.addEventListener('input', e => {
 
 document.getElementById('settings-btn').addEventListener('click', openSettings);
 
+// Refresh button — flush any pending note, then fully reload (picks up new pushes / new day)
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  clearTimeout(notesTA._t);
+  try { saveActiveNotes(); } catch (e) {}
+  location.reload();
+});
+
 // ── Export / Import (data backup) ──
-const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','problems','rules','goals','goalResults','notes','notes2','notes3','checks','physLogs','probNotes','activities','activityLogs','eatOuts'];
+const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','problems','rules','goals','goalPlan','goalResults','reminders','notes','notes2','notes3','checks','physLogs','probNotes','activities','activityLogs','eatOuts'];
 
 function buildBackup() {
   const payload = {
@@ -3621,9 +3823,10 @@ if (urlParams.get('tab') && TAB_NAMES[urlParams.get('tab')]) switchTab(urlParams
 notifCheck();
 setInterval(notifCheck, 60000);
 renderAll();
-// Overview is the default tab — it shows the Settings gear (no pen)
+// Overview is the default tab — it shows refresh + Settings gear (no pen)
 editBtn.style.display = 'none';
 settingsBtn.style.display = '';
+refreshBtn.style.display = '';
 
 // ── Android back-gesture / History API ──
 // On Android, the edge-swipe back gesture triggers a popstate event.
