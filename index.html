@@ -1318,6 +1318,25 @@
   .mini-stat { display:inline-flex; align-items:center; gap:4px; margin-left:8px; font-weight:800; font-size:12px; }
   .mini-stat.ok { color: var(--green); }
   .mini-stat.no { color: var(--red); }
+
+  /* eat-out limit + past months */
+  .eo-limit-input {
+    width: 84px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-size: 15px; font-weight: 700; text-align: center;
+    padding: 6px 8px; outline: none; font-family: inherit; flex-shrink: 0;
+  }
+  .eo-limit-input:focus { border-color: var(--accent); }
+  .eatout-stat.warn .v { color: var(--red); }
+  #eatout-months { border-top: 1px solid var(--border); margin-top: 4px; padding-bottom: 6px; }
+  .em-title { padding: 10px 16px 2px; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); }
+  .em-row {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 10px;
+    padding: 6px 16px; font-size: 13px; align-items: baseline;
+  }
+  .em-month { color: var(--text); font-weight: 500; }
+  .em-count { color: var(--text-muted); }
+  .em-amt { color: var(--green); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -1442,6 +1461,7 @@
         </div>
         <div id="eatout-summary"></div>
         <div class="list-body" id="list-eatout"></div>
+        <div id="eatout-months"></div>
       </div>
     </div>
 
@@ -1614,6 +1634,16 @@
         <label class="notif-row">
           <input type="checkbox" id="ov-getto">
           <span><strong>🕑 Show "Get to" problems</strong><small>Also show Get-to problems on the Overview tab, below Priority ones</small></span>
+        </label>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">🍽 Eat Out</span>
+        </div>
+        <label class="notif-row" style="cursor:default;">
+          <span><strong>Monthly limit</strong><small>Max eat-outs per month — powers the “Left” counter (blank = no limit)</small></span>
+          <input type="number" id="eo-limit" class="eo-limit-input" min="0" step="1" placeholder="∞">
         </label>
       </div>
 
@@ -2322,6 +2352,7 @@ function deleteActivityLog(logId) {
 
 /* ── Eat Out tracker — log how often you eat out & what it costs ── */
 function fmtKr(a) { return (Math.round((a || 0) * 100) / 100) + ' kr'; }
+function getEatOutLimit() { const v = parseInt(LS.get('lm_eatout_limit', ''), 10); return (!isNaN(v) && v > 0) ? v : null; }
 
 function addEatOut(amount) {
   const a = parseFloat(amount);
@@ -2359,13 +2390,17 @@ function renderEatOut() {
   const daysInMonth = new Date(parseInt(todayStr.slice(0, 4), 10), parseInt(todayStr.slice(5, 7), 10), 0).getDate();
   const elapsed = dayOfMonth - 1;                       // completed days this month so far
   const est = elapsed > 0 ? Math.round((doneTotal / elapsed) * daysInMonth) : null;
+  const limit = getEatOutLimit();
+  const left  = limit === null ? null : Math.max(0, limit - month.length);
 
   sumEl.innerHTML = `
     <div class="eatout-stats">
       <div class="eatout-stat"><div class="v">${month.length}</div><div class="l">Eat-outs</div></div>
+      <div class="eatout-stat${left === 0 ? ' warn' : ''}"><div class="v">${left === null ? '∞' : left}</div><div class="l">Left this month</div></div>
       <div class="eatout-stat"><div class="v">${fmtKr(monthTotal)}</div><div class="l">Spent</div></div>
       <div class="eatout-stat est"><div class="v">${est === null ? '—' : '~' + est.toLocaleString() + ' kr'}</div><div class="l">Est. food month</div></div>
     </div>`;
+  renderEatOutMonths();
   listEl.innerHTML = '';
   if (!sorted.length) {
     listEl.innerHTML = emptyState('No eat-out entries yet — tap 91 kr or 163 kr to log one');
@@ -2385,6 +2420,28 @@ function renderEatOut() {
       <button class="eat-row-del" data-del-eat="${e.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
     listEl.appendChild(row);
   });
+}
+
+function renderEatOutMonths() {
+  const monthsEl = document.getElementById('eatout-months');
+  if (!monthsEl) return;
+  const monthKey = TODAY().slice(0, 7);
+  const byMonth = {};
+  data.eatOuts.forEach(e => {
+    const k = (e.date || '').slice(0, 7);
+    if (k && k !== monthKey) (byMonth[k] = byMonth[k] || []).push(e);
+  });
+  const keys = Object.keys(byMonth).sort().reverse().slice(0, 12);
+  if (!keys.length) { monthsEl.innerHTML = ''; return; }
+  const label = k => {
+    try { return new Date(k + '-01T00:00:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); }
+    catch { return k; }
+  };
+  monthsEl.innerHTML = '<div class="em-title">Past months</div>' + keys.map(k => {
+    const es = byMonth[k];
+    const sum = es.reduce((s, e) => s + (e.amount || 0), 0);
+    return `<div class="em-row"><span class="em-month">${label(k)}</span><span class="em-count">${es.length} times</span><span class="em-amt">${fmtKr(sum)}</span></div>`;
+  }).join('');
 }
 
 function startEditEat(id) {
@@ -3649,6 +3706,8 @@ function renderNotifPanel() {
 
   const ovGetto = document.getElementById('ov-getto');
   if (ovGetto) ovGetto.checked = getOverviewGettoPref();
+  const eoLimit = document.getElementById('eo-limit');
+  if (eoLimit) eoLimit.value = getEatOutLimit() === null ? '' : getEatOutLimit();
 }
 
 function notifSaveFeedback() {
@@ -3702,6 +3761,12 @@ settingsOverlay.addEventListener('change', e => {
     renderOverview();
     return;
   }
+  if (id === 'eo-limit') {
+    const v = e.target.value.trim();
+    LS.set('lm_eatout_limit', v ? String(parseInt(v, 10) || 1) : '');
+    renderEatOut();
+    return;
+  }
   if (!id || !id.startsWith('nf-')) return;
   const prefs = loadNotifPrefs();
 
@@ -3742,13 +3807,14 @@ settingsOverlay.addEventListener('change', e => {
 settingsOverlay.addEventListener('input', e => {
   const id = e.target.id;
   if (!id) return;
-  if (id !== 'nf-exams-days' && id !== 'nf-activity-days' && id !== 'nf-health-time' && id !== 'nf-activity-time' && id !== 'nf-review-time') return;
+  if (id !== 'nf-exams-days' && id !== 'nf-activity-days' && id !== 'nf-health-time' && id !== 'nf-activity-time' && id !== 'nf-review-time' && id !== 'eo-limit') return;
   const prefs = loadNotifPrefs();
   if (id === 'nf-health-time') prefs.health.time = e.target.value || '18:00';
   if (id === 'nf-activity-time') prefs.activity.time = e.target.value || '21:00';
   if (id === 'nf-exams-days') prefs.exams.days = Math.max(1, parseInt(e.target.value, 10) || 1);
   if (id === 'nf-activity-days') prefs.activity.days = Math.max(1, parseInt(e.target.value, 10) || 1);
   if (id === 'nf-review-time') prefs.review.time = e.target.value || '22:00';
+  if (id === 'eo-limit') { const v = e.target.value.trim(); LS.set('lm_eatout_limit', v ? String(parseInt(v, 10) || 1) : ''); renderEatOut(); }
   saveNotifPrefs(prefs);
   notifSaveFeedback();
 });
