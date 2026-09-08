@@ -1309,6 +1309,15 @@
   .pd-stats .stat { display:inline-flex; align-items:center; gap:4px; font-size:12px; }
   .pd-stats .stat.ok { color: var(--green); }
   .pd-stats .stat.no { color: var(--red); }
+
+  /* goal picker edits + daily past-day preview chips */
+  .goal-tile.pick { position: relative; }
+  .goal-tile.pick .goal-tile-main { cursor: pointer; }
+  .goal-edit-mini { position:absolute; top:8px; right:8px; z-index:1; width:26px; height:26px; border:none; border-radius:8px; background: var(--surface2); color: var(--text-muted); font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .goal-edit-mini:hover { background: var(--border); color: var(--text); }
+  .mini-stat { display:inline-flex; align-items:center; gap:4px; margin-left:8px; font-weight:800; font-size:12px; }
+  .mini-stat.ok { color: var(--green); }
+  .mini-stat.no { color: var(--red); }
 </style>
 </head>
 <body>
@@ -2495,16 +2504,17 @@ function pickerTileHtml(g) {
     ? '<div class="goal-tile-top"><span class="oath-tag"><i class="fa-solid fa-scale-balanced"></i> Oath</span></div>'
     : '';
   return `
-    <div class="goal-tile pick${sel ? ' picked' : ''}${g.oath ? ' oath' : ''}" data-goal-toggle="${g.id}">
+    <div class="goal-tile pick${sel ? ' picked' : ''}${g.oath ? ' oath' : ''}">
+      <button class="goal-edit-mini" data-goal-edit="${g.id}" title="Edit goal"><i class="fa-solid fa-pen"></i></button>
       ${oathTag}
-      <div class="goal-tile-main">
+      <div class="goal-tile-main" data-goal-toggle="${g.id}">
         <span class="goal-tile-text">${escHtml(g.text)}</span>
         <span class="pick-ring"><i class="fa-solid fa-check"></i></span>
       </div>
     </div>`;
 }
 
-// Goals committed for a given day (null = not planned yet)
+// Goals committed for a given day (null = not committed yet)
 function goalPlanFor(date) {
   return Object.prototype.hasOwnProperty.call(data.goalPlan, date) ? data.goalPlan[date] : null;
 }
@@ -2512,7 +2522,6 @@ function goalPlanFor(date) {
 function commitGoalPlan(ids) {
   const today = TODAY();
   data.goalPlan[today] = ids.slice();
-  // Marks only stay for goals that are still in today's plan
   data.goalResults[today] = (data.goalResults[today] || []).filter(e => ids.includes(e.id));
   save('goalPlan');
   save('goalResults');
@@ -2527,13 +2536,9 @@ function renderGoals() {
   if (!listEl) return;
 
   const today = TODAY();
-  let plan = goalPlanFor(today);
-  if (plan === null && !goalPlanEditing && data.goals.length) {
-    goalPlanEditing = true;
-    goalDraft = new Set(data.goals.map(g => g.id));
-  }
+  const plan = goalPlanFor(today);
   const picking = goalPlanEditing && data.goals.length > 0;
-  const visibleIds = picking ? null : new Set(plan || []);
+  const committed = !picking && plan !== null;
 
   const marks = todayGoalEntries();
   const resultMap = {};
@@ -2544,14 +2549,19 @@ function renderGoals() {
     if (data.goals.length) {
       if (picking) {
         barEl.innerHTML = `
-          <span class="pb-title">Pick which goals you'll try today</span>
+          <span class="pb-title">Tap the goals you want to do today</span>
           <span class="pb-actions">
             <button class="pb-btn ghost" data-goal-plan="all">All</button>
             <button class="pb-btn ghost" data-goal-plan="none">None</button>
+            <button class="pb-btn ghost" data-goal-plan="add">＋ Add</button>
             <button class="pb-btn" data-goal-plan="commit">Commit ${goalDraft.size}</button>
           </span>`;
+      } else if (!committed) {
+        barEl.innerHTML = `
+          <span class="pb-title">Not committed yet today</span>
+          <button class="pb-btn" data-goal-plan="start">Commit</button>`;
       } else {
-        const n = plan ? plan.length : 0;
+        const n = plan.length;
         barEl.innerHTML = `
           <span class="pb-title">Committed today: <strong>${n}</strong> of ${data.goals.length}</span>
           <button class="pb-btn ghost" data-goal-plan="edit">Change</button>`;
@@ -2567,9 +2577,7 @@ function renderGoals() {
     return;
   }
 
-  const tileHtml = g => picking ? pickerTileHtml(g) : markTileHtml(g, resultMap[g.id] || '');
-  const visible = picking ? data.goals : data.goals.filter(g => !!(visibleIds && visibleIds.has(g.id)));
-  const group = (goals, label, icon) => {
+  const group = (goals, label, icon, tileHtml) => {
     if (!goals.length) return '';
     return `
       <div class="goal-group">
@@ -2577,18 +2585,28 @@ function renderGoals() {
         ${goals.map(tileHtml).join('')}
       </div>`;
   };
+  const doGoals   = data.goals.filter(g => g.kind !== 'dont');
+  const dontGoals = data.goals.filter(g => g.kind === 'dont');
 
-  if (!picking && !visible.length) {
-    listEl.innerHTML = '<div class="past-empty">No goals committed for today — tap Change to pick some.</div>';
+  if (picking) {
+    listEl.innerHTML = group(doGoals, 'Things to do', 'fa-circle-check', pickerTileHtml)
+      + group(dontGoals, 'Things not to do', 'fa-hand', pickerTileHtml);
+  } else if (!committed) {
+    listEl.innerHTML = '<div class="past-empty">Press <strong>Commit</strong> above, then pick which goals you\'ll try today.</div>';
   } else {
-    listEl.innerHTML = group(visible.filter(g => g.kind !== 'dont'), 'Things to do', 'fa-circle-check')
-      + group(visible.filter(g => g.kind === 'dont'), 'Things not to do', 'fa-hand');
+    const visible = data.goals.filter(g => plan.includes(g.id));
+    if (!visible.length) {
+      listEl.innerHTML = '<div class="past-empty">No goals committed for today — press Change to pick some.</div>';
+    } else {
+      const tile = g => markTileHtml(g, resultMap[g.id] || '');
+      listEl.innerHTML = group(visible.filter(g => g.kind !== 'dont'), 'Things to do', 'fa-circle-check', tile)
+        + group(visible.filter(g => g.kind === 'dont'), 'Things not to do', 'fa-hand', tile);
+    }
   }
 
   updateHistoryPreview();
   if (historyOverlay.classList.contains('open')) renderHistoryPage();
 }
-
 function pastDayCardHtml(d) {
   const entries = data.goalResults[d] || [];
   const ok = entries.filter(e => e.result === 'success').length;
@@ -2619,7 +2637,7 @@ function updateHistoryPreview() {
   const entries = data.goalResults[days[0]] || [];
   const ok = entries.filter(e => e.result === 'success').length;
   const no = entries.filter(e => e.result === 'fail').length;
-  el.textContent = `${shortDay(days[0])} · ${ok} ✓ · ${no} ✗`;
+  el.innerHTML = `${shortDay(days[0])} <span class="mini-stat ok"><i class="fa-solid fa-check"></i>${ok}</span><span class="mini-stat no"><i class="fa-solid fa-xmark"></i>${no}</span>`;
 }
 
 function renderHistoryPage() {
@@ -2675,11 +2693,15 @@ document.getElementById('sec-goals').addEventListener('click', e => {
   if (p) {
     const v = p.dataset.goalPlan;
     if (v === 'commit') commitDraft();
+    else if (v === 'start') { goalPlanEditing = true; goalDraft = new Set(); renderGoals(); }
     else if (v === 'edit') { goalPlanEditing = true; goalDraft = new Set(goalPlanFor(TODAY()) || []); renderGoals(); }
     else if (v === 'all') { goalDraft = new Set(data.goals.map(g => g.id)); renderGoals(); }
     else if (v === 'none') { goalDraft = new Set(); renderGoals(); }
+    else if (v === 'add') { openModal('goals'); }
     return;
   }
+  const pe = e.target.closest('[data-goal-edit]');
+  if (pe) { openModal('goals', pe.dataset.goalEdit); return; }
   const tg = e.target.closest('[data-goal-toggle]');
   if (tg) {
     const id = tg.dataset.goalToggle;
@@ -3549,8 +3571,8 @@ function notifCheck() {
     if (r.done || fired.reminders[r.id]) return;
     const d = daysUntil(r.date || '');
     if (isNaN(d)) return;
-    if (d <= 1) {
-      const when = d < 0 ? 'is overdue' : d === 0 ? 'is due today' : 'is due tomorrow';
+    if (d <= 3) {
+      const when = d < 0 ? 'is overdue' : d === 0 ? 'is due today' : d === 1 ? 'is due tomorrow' : 'is due in ' + d + ' days';
       sendNotif('⏰ Reminder', r.title + ' ' + when, 'rem-' + r.id, 'daily');
       fired.reminders[r.id] = true;
     }
