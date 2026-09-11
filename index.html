@@ -1418,6 +1418,14 @@
         <div class="goal-planbar" id="goal-planbar"></div>
         <div class="goal-tiles" id="list-goals"></div>
       </div>
+      <!-- Todos -->
+      <div class="section-card" id="sec-todos">
+        <div class="section-header">
+          <span class="section-title">✅ Todos</span>
+          <button class="add-btn" data-action="add" data-section="todos"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div class="list-body" id="list-todos"></div>
+      </div>
       <!-- Past days -->
       <div class="section-card" id="sec-past-goals">
         <div class="section-header">
@@ -1742,6 +1750,7 @@ const data = {
   goalResults: LS.get('lm_goalResults', {}),         // { 'YYYY-MM-DD': [{id, text, kind, oath, result:'success'|'fail'}] }
   goalPlan:    LS.get('lm_goalPlan', {}),              // { 'YYYY-MM-DD': [goalId, ...] } — goals committed for that day
   reminders:   LS.get('lm_reminders', []),             // [{id, title, date, done}]
+  todos:       LS.get('lm_todos', []),                // [{id, title, done}]
   notes:    LS.get('lm_notes',    DEFAULTS.notes),
   notes2:   LS.get('lm_notes2',   ''),
   notes3:   LS.get('lm_notes3',   ''),
@@ -2841,6 +2850,43 @@ document.getElementById('sec-reminders').addEventListener('click', e => {
   if (r) { setReminderDone(r.dataset.reopenRem, false); return; }
 });
 
+/* ── Todos (Daily tab) ── */
+function renderTodos() {
+  const listEl = document.getElementById('list-todos');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  if (!data.todos.length) { listEl.innerHTML = emptyState('No todos yet — press ✏️ then Add'); return; }
+  const active = sortPinned('todos', data.todos.filter(t => !t.done));
+  const done   = sortPinned('todos', data.todos.filter(t => t.done));
+  active.concat(done).forEach(t => {
+    const pinned = isPinned('todos', t.id);
+    const div = document.createElement('div');
+    div.className = 'check-item' + (t.done ? ' done' : '') + (pinned ? ' pinned' : '') + ' fade-in';
+    div.dataset.id = t.id;
+    div.dataset.section = 'todos';
+    div.innerHTML = `
+      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
+      ${pinBtn('todos', t.id)}
+      <input type="checkbox" id="todo-${t.id}" data-todo-done="${t.id}" ${t.done ? 'checked' : ''}>
+      <label for="todo-${t.id}">${escHtml(t.title)}</label>
+      ${editBtnHtml('todos', t.id)}
+      <button class="delete-btn" data-action="delete" data-section="todos" data-id="${t.id}"><i class="fa-solid fa-trash"></i></button>`;
+    listEl.appendChild(div);
+  });
+  initDrag(listEl, 'todos');
+}
+
+document.getElementById('list-todos').addEventListener('change', e => {
+  const cb = e.target.closest('[data-todo-done]');
+  if (!cb) return;
+  const t = data.todos.find(x => x.id === cb.dataset.todoDone);
+  if (!t) return;
+  t.done = cb.checked;
+  save('todos');
+  renderTodos();
+  renderOverview();
+});
+
 /* ── Overview — everything prioritized across tabs ──
    Shows: pinned items everywhere, plus Priority-status exams/labs &
    Priority + "Get to" problems. Redo / Done / Archived do NOT appear. */
@@ -2852,7 +2898,8 @@ const OVERVIEW_SECTIONS = [
   { section: 'physics',    tab: 'health',   label: 'Gym Exercises',    icon: 'fa-dumbbell' },
   { section: 'activities', tab: 'daily',    label: 'Activity Tracker', icon: 'fa-chart-line' },
   { section: 'rules',      tab: 'problems', label: 'Rules',            icon: 'fa-list-check' },
-  { section: 'problems',   tab: 'problems', label: 'Problems',         icon: 'fa-triangle-exclamation' }
+  { section: 'problems',   tab: 'problems', label: 'Problems',         icon: 'fa-triangle-exclamation' },
+  { section: 'todos',      tab: 'daily',    label: 'Todos',            icon: 'fa-square-check' }
 ];
 
 function getOverviewGettoPref() { return LS.get('lm_overview_getto', true); }
@@ -2860,6 +2907,7 @@ function getOverviewGettoPref() { return LS.get('lm_overview_getto', true); }
 function overviewPriorityOf(section, item) {
   if (section === 'exams' || section === 'labs') return isPinned(section, item.id) || item.status === 'priority';
   if (section === 'problems') return item.status === 'priority' || (getOverviewGettoPref() && item.status === 'later');
+  if (section === 'todos') return isPinned(section, item.id) && !item.done;
   return isPinned(section, item.id);
 }
 
@@ -2947,6 +2995,7 @@ function renderAll() {
   renderEatOut();
   renderGoals();
   renderReminders();
+  renderTodos();
   renderChecklist('rehab');
   renderChecklist('motion');
   renderPhysics();
@@ -3097,6 +3146,7 @@ function renderSection(section) {
     case 'physics':  renderPhysics(); break;
     case 'goals':    renderGoals(); break;
     case 'reminders': renderReminders(); break;
+    case 'todos':    renderTodos(); break;
     case 'problems': renderProblems(); break;
     case 'rules':    renderSimpleList('rules', document.getElementById('list-rules')); break;
   }
@@ -3152,6 +3202,7 @@ const MODAL_CONFIGS = {
                 { id:'oath', label:'I swore an oath not to do this', type:'checkbox' }
               ]},
   reminders:{ title: 'Add Reminder',   fields: [{ id:'title', label:'What do you need to do?', type:'text', placeholder:'e.g. Pay rent / Dentist' }, { id:'date', label:'Due date', type:'date' }] },
+  todos:    { title: 'Add Todo',       fields: [{ id:'title', label:'Todo', type:'text', placeholder:'e.g. Call the bank' }] },
   problems: { title: 'Add Problem',   fields: [{ id:'title', label:'Problem', type:'text', placeholder:'' }] },
   rules:    { title: 'Add Rule',      fields: [{ id:'title', label:'Rule', type:'text', placeholder:'e.g. No phone after 10pm' }] },
   activities: { title: 'Edit Activity', fields: [{ id:'title', label:'Activity name', type:'text', placeholder:'' }] },
@@ -3489,6 +3540,7 @@ activityModalOverlay.addEventListener('click', e => { if (e.target === activityM
 document.getElementById('content').addEventListener('change', e => {
   const cb = e.target.closest('input[type="checkbox"]');
   if (!cb) return;
+  if (!cb.dataset.section) return;   // unrelated checkbox (e.g. todos)
   const section = cb.dataset.section;
   const id      = cb.dataset.id;
   setCheck(section, id, cb.checked);
@@ -3845,7 +3897,7 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
 });
 
 // ── Export / Import (data backup) ──
-const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','problems','rules','goals','goalPlan','goalResults','reminders','notes','notes2','notes3','checks','physLogs','probNotes','activities','activityLogs','eatOuts'];
+const BACKUP_KEYS = ['exams','labs','rehab','motion','physics','problems','rules','goals','goalPlan','goalResults','reminders','todos','notes','notes2','notes3','checks','physLogs','probNotes','activities','activityLogs','eatOuts'];
 
 function buildBackup() {
   const payload = {
