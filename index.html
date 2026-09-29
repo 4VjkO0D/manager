@@ -1971,10 +1971,32 @@ function editBtnHtml(section, id) {
   return `<button class="edit-btn edit-ctrl" data-action="edit" data-section="${section}" data-id="${id}" title="Edit"><i class="fa-solid fa-pen"></i></button>`;
 }
 
-// School lists: pinned first, then everything else, and "Done" items always at the bottom
+// School lists are ALWAYS ordered by urgency (also used by the Overview):
+//   1) exams/labs still ahead of you — least days left at the top
+//   2) items without a date
+//   3) items that already passed
+//   4) "Redo" items, and "Done" items at the very bottom
+function schoolSortScore(item) {
+  const status = schoolStatusOf(item);
+  const days   = item.date ? daysUntil(item.date) : null;
+  let tier;
+  if      (status === 'done')  tier = 5;
+  else if (status === 'redo')  tier = 4;
+  else if (!item.date)         tier = 2;
+  else if (days < 0)           tier = 3;
+  else                         tier = 1;
+  return { tier, days: days === null ? Number.MAX_SAFE_INTEGER : days };
+}
 function schoolSort(section, items) {
-  const pinned = sortPinned(section, items);
-  return [...pinned.filter(x => x.status !== 'done'), ...pinned.filter(x => x.status === 'done')];
+  return [...items].sort((a, b) => {
+    const sa = schoolSortScore(a), sb = schoolSortScore(b);
+    if (sa.tier !== sb.tier) return sa.tier - sb.tier;
+    if (sa.days !== sb.days) return sa.days - sb.days;      // least days left first
+    const pa = isPinned(section, a.id) ? 0 : 1;             // tie-breakers only
+    const pb = isPinned(section, b.id) ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+    return String(a.title || '').localeCompare(String(b.title || ''));
+  });
 }
 
 /* Generic simple list (rules) */
@@ -2020,7 +2042,6 @@ function renderLabs() {
       deadlineBadge = `<span class="countdown ${countdownClass(days)}">${countdownLabel(days)}</span>`;
     }
     div.innerHTML = `
-      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
       ${pinBtn('labs', item.id)}
       ${schoolStatusToggle('labs', item)}
       <div class="item-main">
@@ -2035,7 +2056,7 @@ function renderLabs() {
       </button>`;
     listEl.appendChild(div);
   });
-  initDrag(listEl, 'labs');
+  initDrag(listEl, 'labs', true);   // auto-sorted: manual reorder is pointless
 }
 
 /* Exams list */
@@ -2053,7 +2074,6 @@ function renderExams() {
     div.dataset.id = item.id;
     div.dataset.section = 'exams';
     div.innerHTML = `
-      <div class="drag-handle edit-ctrl"><i class="fa-solid fa-grip-lines"></i></div>
       ${pinBtn('exams', item.id)}
       ${schoolStatusToggle('exams', item)}
       <div class="item-main">
@@ -2066,7 +2086,7 @@ function renderExams() {
       <button class="delete-btn" data-action="delete" data-section="exams" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>`;
     listEl.appendChild(div);
   });
-  initDrag(listEl, 'exams');
+  initDrag(listEl, 'exams', true);  // auto-sorted: manual reorder is pointless
 }
 
 /* Checklist (rehab / motion) */
@@ -2889,7 +2909,8 @@ document.getElementById('list-todos').addEventListener('change', e => {
 
 /* ── Overview — everything prioritized across tabs ──
    Shows: pinned items everywhere, plus Priority-status exams/labs &
-   Priority + "Get to" problems. Redo / Done / Archived do NOT appear. */
+   Priority + "Get to" problems. Archived problems do NOT appear.
+   Exams / Labs always follow the same urgency order as the School tab. */
 const OVERVIEW_SECTIONS = [
   { section: 'exams',      tab: 'school',   label: 'Exams',            icon: 'fa-file-pen' },
   { section: 'labs',       tab: 'school',   label: 'Labs',             icon: 'fa-flask' },
@@ -2955,7 +2976,11 @@ function renderOverview() {
   let html = '';
   let total = 0;
   OVERVIEW_SECTIONS.forEach(({ section, tab, label, icon }) => {
-    const items = (data[section] || []).filter(item => overviewPriorityOf(section, item));
+    let items = (data[section] || []).filter(item => overviewPriorityOf(section, item));
+    if (section === 'exams' || section === 'labs') {
+      // same urgency order as the School tab: least days left first, then no-date, past, redo/done
+      items = schoolSort(section, items);
+    }
     // Priority problems always sit above "Get to" ones (stable sort keeps their internal order)
     if (section === 'problems') {
       items.sort((a, b) => (a.status === 'priority' ? 0 : 1) - (b.status === 'priority' ? 0 : 1));
@@ -3005,8 +3030,8 @@ function renderAll() {
 }
 
 // ── Drag-to-reorder engine (touch + mouse) ──
-function initDrag(container, section) {
-  if (!container) return;
+function initDrag(container, section, disabled) {
+  if (!container || disabled) return;
   let dragEl = null, startY = 0, startIdx = 0;
 
   function getItems() { return [...container.children].filter(c => c.dataset.id); }
