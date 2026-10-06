@@ -1331,13 +1331,42 @@
   .eatout-stats.row2 { margin-top: 6px; }
   #eatout-months { border-top: 1px solid var(--border); margin-top: 4px; padding-bottom: 6px; }
   .em-title { padding: 10px 16px 2px; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); }
-  .em-row {
-    display: grid; grid-template-columns: 1fr auto auto; gap: 10px;
-    padding: 6px 16px; font-size: 13px; align-items: baseline;
+  /* eat-out stats block (top of the card) */
+  #eatout-stats-block { padding: 10px 16px 0; }
+  #eatout-stats-block:empty { display: none; }
+  .eo-stats { display: flex; gap: 6px; }
+  .eo-stat {
+    flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 3px; text-align: center;
   }
+  .eo-stat .v { font-size: 13px; font-weight: 800; color: var(--text); white-space: nowrap; }
+  .eo-stat .l { font-size: 8.5px; color: var(--text-muted); letter-spacing: .3px; text-transform: uppercase; margin-top: 2px; }
+  .eo-stat.streak .v { color: var(--amber); }
+  .eo-stat.best .v { color: var(--accent2); }
+  .eo-range { margin-top: 7px; font-size: 11px; color: var(--text-muted); text-align: center; }
+  /* past months — tap a month to unfold its entries */
+  .em-month-block { border-top: 1px solid var(--border); }
+  .em-title + .em-month-block { border-top: none; }
+  .em-row {
+    display: grid; grid-template-columns: 1fr auto auto 14px; gap: 10px;
+    align-items: center; width: 100%;
+    padding: 10px 16px; font-size: 13px;
+    background: none; border: none; color: inherit; font-family: inherit;
+    text-align: left; cursor: pointer;
+    transition: background var(--transition);
+  }
+  .em-row:hover { background: rgba(255,255,255,0.03); }
   .em-month { color: var(--text); font-weight: 500; }
   .em-count { color: var(--text-muted); }
   .em-amt { color: var(--green); font-weight: 700; }
+  .em-chev { font-size: 10px; color: var(--text-muted); transition: transform var(--transition); }
+  .em-month-block.open .em-chev { transform: rotate(180deg); }
+  .em-entries { display: none; padding: 2px 16px 8px; }
+  .em-month-block.open .em-entries { display: block; animation: fadeIn .2s ease; }
+  .em-sub { font-size: 11px; color: var(--text-muted); padding-bottom: 4px; }
+  .em-entry { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0 4px 12px; font-size: 12px; }
+  .em-entry .d { color: var(--text-muted); }
+  .em-entry .a { color: var(--green); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -1380,33 +1409,6 @@
         <div class="list-body" id="list-labs"></div>
       </div>
     </div>
-    <div id="tab-health" class="tab-panel">
-      <!-- Rehab -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="section-title">Rehab Exercises</span>
-          <button class="add-btn" data-action="add" data-section="rehab"><i class="fa-solid fa-plus"></i> Add</button>
-        </div>
-        <div class="list-body" id="list-rehab"></div>
-      </div>
-      <!-- Motion -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="section-title">Motion Goals</span>
-          <button class="add-btn" data-action="add" data-section="motion"><i class="fa-solid fa-plus"></i> Add</button>
-        </div>
-        <div class="list-body" id="list-motion"></div>
-      </div>
-      <!-- Physics -->
-      <div class="section-card">
-        <div class="section-header">
-          <span class="section-title">Physics Exercises</span>
-          <button class="add-btn" data-action="add" data-section="physics"><i class="fa-solid fa-plus"></i> Add</button>
-        </div>
-        <div class="list-body" id="list-physics"></div>
-      </div>
-    </div>
-
     <!-- DAILY TAB -->
     <div id="tab-daily" class="tab-panel">
       <!-- Goals (today) -->
@@ -1460,6 +1462,7 @@
         <div class="section-header">
           <span class="section-title">🍽 Eat Out</span>
         </div>
+        <div id="eatout-stats-block"></div>
         <div class="eatout-quick">
           <button class="eatout-quick-btn" data-quick-eat="91">91 kr</button>
           <button class="eatout-quick-btn alt" data-quick-eat="163">163 kr</button>
@@ -1519,7 +1522,6 @@
   <nav id="bottom-nav">
     <button class="nav-btn active" data-tab="overview"><i class="fa-solid fa-gauge-high"></i>Overview</button>
     <button class="nav-btn" data-tab="school"><i class="fa-solid fa-graduation-cap"></i>School</button>
-    <button class="nav-btn" data-tab="health"><i class="fa-solid fa-heart-pulse"></i>Health</button>
     <button class="nav-btn" data-tab="daily"><i class="fa-solid fa-calendar-day"></i>Daily</button>
     <button class="nav-btn" data-tab="problems"><i class="fa-solid fa-triangle-exclamation"></i>Problems</button>
     <button class="nav-btn" data-tab="notes"><i class="fa-solid fa-note-sticky"></i>Notes</button>
@@ -1881,7 +1883,7 @@ let autosaveTimer = null;
 let currentProblemFilter = 'all';  // 'all' | 'priority' | 'later' | 'archived'
 
 // Tab display names
-const TAB_NAMES = { overview:'Overview', school:'School', health:'Health', daily:'Daily', problems:'Problems', notes:'Notes' };
+const TAB_NAMES = { overview:'Overview', school:'School', daily:'Daily', problems:'Problems', notes:'Notes' };
 
 // ── Render functions ──
 
@@ -2445,6 +2447,7 @@ function renderEatOut() {
       <div class="eatout-stat${moneyLeft === 0 ? ' warn' : ''}"><div class="v">${moneyLeft === null ? '∞' : fmtKr(moneyLeft)}</div><div class="l">Money left</div></div>
       <div class="eatout-stat est"><div class="v">${est === null ? '—' : '~' + est.toLocaleString() + ' kr'}</div><div class="l">Est. food month</div></div>
     </div>${budgetRow}`;
+  renderEatOutStats();
   renderEatOutMonths();
   listEl.innerHTML = '';
   if (!sorted.length) {
@@ -2467,6 +2470,69 @@ function renderEatOut() {
   });
 }
 
+/* Eat-out history — streaks measured in consecutive calendar days */
+let openEatMonths = new Set();
+
+function eatOutDayStreaks(entries) {
+  const days = [...new Set((entries || []).map(e => e.date).filter(Boolean))].sort();
+  const ms   = d => new Date(d + 'T00:00:00').getTime();
+  const gap  = (a, b) => Math.round((ms(b) - ms(a)) / 86400000);
+
+  // longest run of back-to-back days anywhere in the history
+  let longest = 0, longestStart = null, longestEnd = null, run = 0, runStart = null;
+  days.forEach((d, i) => {
+    if (i > 0 && gap(days[i - 1], d) === 1) run++;
+    else { run = 1; runStart = d; }
+    if (run > longest) { longest = run; longestStart = runStart; longestEnd = d; }
+  });
+
+  // current run — still alive if the last eat-out was today or yesterday (today isn't over yet)
+  const today     = TODAY();
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const last      = days.length ? days[days.length - 1] : null;
+  let current = 0;
+  if (last === today || last === yesterday) {
+    current = 1;
+    for (let i = days.length - 1; i > 0; i--) {
+      if (gap(days[i - 1], days[i]) === 1) current++; else break;
+    }
+  }
+  return { current, longest, longestStart, longestEnd };
+}
+
+/* Stats strip pinned to the top of the Eat Out card */
+function renderEatOutStats() {
+  const el = document.getElementById('eatout-stats-block');
+  if (!el) return;
+  const all = data.eatOuts || [];
+  if (!all.length) { el.innerHTML = ''; return; }
+  const monthKey   = TODAY().slice(0, 7);
+  const month      = all.filter(e => (e.date || '').startsWith(monthKey));
+  const monthTotal = month.reduce((s, e) => s + (e.amount || 0), 0);
+  const total      = all.reduce((s, e) => s + (e.amount || 0), 0);
+  const avg        = total / all.length;
+  const { current, longest, longestStart, longestEnd } = eatOutDayStreaks(all);
+  const range = longestStart
+    ? (longest > 1 ? `${shortDay(longestStart)} → ${shortDay(longestEnd)}` : shortDay(longestStart))
+    : '';
+  el.innerHTML = `
+    <div class="eo-stats">
+      <div class="eo-stat"><div class="v">${month.length}×</div><div class="l">This month</div></div>
+      <div class="eo-stat"><div class="v">${fmtKr(monthTotal)}</div><div class="l">Spent</div></div>
+      <div class="eo-stat"><div class="v">${fmtKr(avg)}</div><div class="l">Avg each</div></div>
+      <div class="eo-stat streak"><div class="v">${current}</div><div class="l">Streak</div></div>
+      <div class="eo-stat best"><div class="v">${longest}</div><div class="l">Best</div></div>
+    </div>
+    <div class="eo-range">Longest: ${longest} ${longest === 1 ? 'day' : 'days'} in a row${range ? ' · ' + range : ''}</div>`;
+}
+
+function toggleEatOutMonth(monthKey) {
+  if (openEatMonths.has(monthKey)) openEatMonths.delete(monthKey);
+  else openEatMonths.add(monthKey);
+  renderEatOutMonths();
+}
+
+/* Past months — one compact row per month; tap a row to unfold that month's history */
 function renderEatOutMonths() {
   const monthsEl = document.getElementById('eatout-months');
   if (!monthsEl) return;
@@ -2482,10 +2548,25 @@ function renderEatOutMonths() {
     try { return new Date(k + '-01T00:00:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); }
     catch { return k; }
   };
-  monthsEl.innerHTML = '<div class="em-title">Past months</div>' + keys.map(k => {
-    const es = byMonth[k];
-    const sum = es.reduce((s, e) => s + (e.amount || 0), 0);
-    return `<div class="em-row"><span class="em-month">${label(k)}</span><span class="em-count">${es.length} times</span><span class="em-amt">${fmtKr(sum)}</span></div>`;
+  monthsEl.innerHTML = '<div class="em-title">Past months · tap to open</div>' + keys.map(k => {
+    const es   = [...byMonth[k]].sort((a, b) => (b.date || '').localeCompare(a.date || '') || ((b.ts || 0) - (a.ts || 0)));
+    const sum  = es.reduce((s, e) => s + (e.amount || 0), 0);
+    const open = openEatMonths.has(k);
+    const { longest } = eatOutDayStreaks(es);
+    const sub  = `${es.length}× · ${fmtKr(sum)} · avg ${fmtKr(sum / es.length)}${longest > 1 ? ` · best ${longest} in a row` : ''}`;
+    return `
+      <div class="em-month-block${open ? ' open' : ''}">
+        <button class="em-row" data-eat-month="${k}" aria-expanded="${open}">
+          <span class="em-month">${label(k)}</span>
+          <span class="em-count">${es.length}×</span>
+          <span class="em-amt">${fmtKr(sum)}</span>
+          <i class="fa-solid fa-chevron-down em-chev"></i>
+        </button>
+        <div class="em-entries">
+          <div class="em-sub">${sub}</div>
+          ${es.map(e => `<div class="em-entry"><span class="d">${escHtml(e.date)} · ${relDateLabel(e.date)}</span><span class="a">${fmtKr(e.amount)}</span></div>`).join('')}
+        </div>
+      </div>`;
   }).join('');
 }
 
@@ -2536,6 +2617,8 @@ if (secEatOut) {
     const sv = e.target.closest('[data-save-eat]');
     if (sv) { saveEditEat(sv.dataset.saveEat); return; }
     if (e.target.closest('[data-cancel-eat]')) { renderEatOut(); return; }
+    const mo = e.target.closest('[data-eat-month]');
+    if (mo) { toggleEatOutMonth(mo.dataset.eatMonth); return; }
   });
   secEatOut.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.id === 'eatout-amount-input') {
@@ -2914,9 +2997,6 @@ document.getElementById('list-todos').addEventListener('change', e => {
 const OVERVIEW_SECTIONS = [
   { section: 'exams',      tab: 'school',   label: 'Exams',            icon: 'fa-file-pen' },
   { section: 'labs',       tab: 'school',   label: 'Labs',             icon: 'fa-flask' },
-  { section: 'rehab',      tab: 'health',   label: 'Rehab Exercises',  icon: 'fa-hand-holding-heart' },
-  { section: 'motion',     tab: 'health',   label: 'Motion Goals',     icon: 'fa-person-walking' },
-  { section: 'physics',    tab: 'health',   label: 'Gym Exercises',    icon: 'fa-dumbbell' },
   { section: 'activities', tab: 'daily',    label: 'Activity Tracker', icon: 'fa-chart-line' },
   { section: 'rules',      tab: 'problems', label: 'Rules',            icon: 'fa-list-check' },
   { section: 'problems',   tab: 'problems', label: 'Problems',         icon: 'fa-triangle-exclamation' },
@@ -3021,9 +3101,6 @@ function renderAll() {
   renderGoals();
   renderReminders();
   renderTodos();
-  renderChecklist('rehab');
-  renderChecklist('motion');
-  renderPhysics();
   renderProblems();
   renderSimpleList('rules', document.getElementById('list-rules'));
   initNotes();
@@ -3166,9 +3243,6 @@ function renderSection(section) {
     case 'exams':    renderExams(); break;
     case 'labs':     renderLabs(); break;
     case 'activities': renderActivities(); break;
-    case 'rehab':    renderChecklist('rehab'); break;
-    case 'motion':   renderChecklist('motion'); break;
-    case 'physics':  renderPhysics(); break;
     case 'goals':    renderGoals(); break;
     case 'reminders': renderReminders(); break;
     case 'todos':    renderTodos(); break;
@@ -3633,7 +3707,7 @@ function registerServiceWorker() {
 // Listen for tab-switch requests from the service worker (notification taps)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.tab) switchTab(e.data.tab);
+    if (e.data && e.data.tab && TAB_NAMES[e.data.tab]) switchTab(e.data.tab);
   });
 }
 
@@ -3696,7 +3770,7 @@ function notifCheck() {
     const missing = [];
     data.rehab.forEach(r => { if (!todayChecks.rehab?.[r.id]) missing.push(r.title); });
     data.motion.forEach(m => { if (!todayChecks.motion?.[m.id]) missing.push(m.title); });
-    if (missing.length) sendNotif('💪 Daily health', 'Still to do today: ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? '…' : ''), 'health', 'health');
+    if (missing.length) sendNotif('💪 Daily health', 'Still to do today: ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? '…' : ''), 'health', '');
     fired.health = true;
   }
 
