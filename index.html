@@ -1364,9 +1364,18 @@
   .em-entries { display: none; padding: 2px 16px 8px; }
   .em-month-block.open .em-entries { display: block; animation: fadeIn .2s ease; }
   .em-sub { font-size: 11px; color: var(--text-muted); padding-bottom: 4px; }
-  .em-entry { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0 4px 12px; font-size: 12px; }
-  .em-entry .d { color: var(--text-muted); }
-  .em-entry .a { color: var(--green); font-weight: 700; }
+  .em-entry { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0 3px 12px; font-size: 12px; }
+  .em-entry .d { color: var(--text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .em-entry .a { color: var(--green); font-weight: 700; flex-shrink: 0; }
+  .em-entry .eat-row-edit, .em-entry .eat-row-del { width: 24px; height: 24px; font-size: 11px; }
+  .em-entry .eat-edit-row { flex: 1; }
+  /* heading for the current-month window inside the list body */
+  .eo-month-head {
+    padding: 2px 14px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .8px; text-transform: uppercase;
+    color: var(--text-muted);
+  }
 </style>
 </head>
 <body>
@@ -2405,14 +2414,17 @@ function renderEatOut() {
   const listEl = document.getElementById('list-eatout');
   const sumEl  = document.getElementById('eatout-summary');
   if (!listEl || !sumEl) return;
-  const sorted = [...data.eatOuts].sort((a, b) => {
-    const d = (b.date || '').localeCompare(a.date || '');
-    return d !== 0 ? d : ((b.ts || 0) - (a.ts || 0)); // same day → newest logged first
-  });
+  const todayStr = TODAY();
+  const monthKey = todayStr.slice(0, 7);
+  // This list is the CURRENT-MONTH window only — older entries live under "Past months"
+  const sorted = [...data.eatOuts]
+    .filter(e => (e.date || '').startsWith(monthKey))
+    .sort((a, b) => {
+      const d = (b.date || '').localeCompare(a.date || '');
+      return d !== 0 ? d : ((b.ts || 0) - (a.ts || 0)); // same day → newest logged first
+    });
   // Monthly summary — entries in the current calendar month
-  const todayStr  = TODAY();
-  const monthKey  = todayStr.slice(0, 7);
-  const month     = data.eatOuts.filter(e => (e.date || '').startsWith(monthKey));
+  const month = data.eatOuts.filter(e => (e.date || '').startsWith(monthKey));
   const monthTotal = month.reduce((s, e) => s + (e.amount || 0), 0);
   // Pace & estimate use ONLY fully finished days — today isn't over yet, so it's
   // excluded (keeps "yesterday's math" until the date changes).
@@ -2451,9 +2463,13 @@ function renderEatOut() {
   renderEatOutMonths();
   listEl.innerHTML = '';
   if (!sorted.length) {
-    listEl.innerHTML = emptyState('No eat-out entries yet — tap 91 kr or 163 kr to log one');
+    listEl.innerHTML = emptyState('No eat-outs this month — tap 91 kr or 163 kr to log one');
     return;
   }
+  const head = document.createElement('div');
+  head.className = 'eo-month-head';
+  head.textContent = 'This month';
+  listEl.appendChild(head);
   sorted.forEach(e => {
     const row = document.createElement('div');
     row.className = 'list-item fade-in';
@@ -2564,16 +2580,21 @@ function renderEatOutMonths() {
         </button>
         <div class="em-entries">
           <div class="em-sub">${sub}</div>
-          ${es.map(e => `<div class="em-entry"><span class="d">${escHtml(e.date)} · ${relDateLabel(e.date)}</span><span class="a">${fmtKr(e.amount)}</span></div>`).join('')}
+          ${es.map(e => `<div class="em-entry" data-eat-id="${e.id}">
+            <span class="d">${escHtml(e.date)} · ${relDateLabel(e.date)}</span>
+            <span class="a">${fmtKr(e.amount)}</span>
+            <button class="eat-row-edit" data-edit-eat="${e.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
+            <button class="eat-row-del" data-del-eat="${e.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+          </div>`).join('')}
         </div>
       </div>`;
   }).join('');
 }
 
 function startEditEat(id) {
-  const listEl = document.getElementById('list-eatout');
   const entry = data.eatOuts.find(e => e.id === id);
-  const row = listEl && listEl.querySelector(`[data-eat-id="${id}"]`);
+  // rows live in the current-month list OR inside an opened "Past months" block
+  const row = document.querySelector(`#sec-eatout [data-eat-id="${id}"]`);
   if (!entry || !row) return;
   row.innerHTML = `
     <div class="eat-edit-row">
